@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { Plus, Trash2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogDescription,
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,6 +19,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Goal } from '@/types/goals';
 
 interface HabitSettingsProps {
     habits: Goal[];
