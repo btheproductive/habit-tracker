@@ -72,8 +72,7 @@ export function DayDetailsModal({
                                             />
                                             <span className={cn(
                                                 "font-medium transition-colors",
-                                                isDone && "text-success-foreground",
-                                                isMissed && "text-destructive-foreground"
+                                                (isDone || isMissed) && "text-foreground"
                                             )}>
                                                 {habit.title}
                                             </span>

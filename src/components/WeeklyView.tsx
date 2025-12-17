@@ -1,8 +1,9 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { format, startOfWeek, addDays, isSameDay } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Goal, GoalLogsMap } from '@/types/goals';
+import { DayDetailsModal } from './DayDetailsModal';
 
 interface WeeklyViewProps {
     habits: Goal[];
@@ -13,6 +14,7 @@ interface WeeklyViewProps {
 export function WeeklyView({ habits, records, onToggleHabit }: WeeklyViewProps) {
     const today = new Date();
     const weekStart = startOfWeek(today, { weekStartsOn: 1 }); // Monday
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
     const weekDays = useMemo(() => {
         return Array.from({ length: 7 }).map((_, i) => addDays(weekStart, i));
@@ -24,21 +26,29 @@ export function WeeklyView({ habits, records, onToggleHabit }: WeeklyViewProps) 
 
             <div className="grid grid-cols-7 gap-2 sm:gap-4">
                 {weekDays.map((date) => {
-                    const dateKey = date.toISOString().split('T')[0];
+                    const dateKey = format(date, 'yyyy-MM-dd');
                     const dayRecord = records[dateKey] || {};
                     const isToday = isSameDay(date, today);
-                    const isFuture = date > today;
+                    // Reset today to midnight for correct comparison
+                    const todayMidnight = new Date(today);
+                    todayMidnight.setHours(0, 0, 0, 0);
+                    const isFuture = date > todayMidnight;
 
                     return (
                         <div key={dateKey} className="flex flex-col gap-2">
                             {/* Header */}
-                            <div className={cn(
-                                "text-center py-2 rounded-xl border border-transparent transition-all",
-                                isToday && "bg-primary/10 border-primary/20 text-primary"
-                            )}>
+                            <button
+                                onClick={() => !isFuture && setSelectedDate(date)}
+                                disabled={isFuture}
+                                className={cn(
+                                    "text-center py-2 rounded-xl border border-transparent transition-all w-full",
+                                    isToday && "bg-primary/10 border-primary/20 text-primary",
+                                    !isFuture && "hover:bg-white/5 hover:border-white/10 cursor-pointer active:scale-95",
+                                    isFuture && "opacity-50 cursor-default"
+                                )}>
                                 <div className="text-[10px] uppercase font-bold opacity-60">{format(date, 'EEE', { locale: it })}</div>
                                 <div className="text-lg font-mono font-bold">{format(date, 'd')}</div>
-                            </div>
+                            </button>
 
                             {/* Habits Column caused by grid */}
                             <div className="flex flex-col gap-2">
@@ -49,6 +59,8 @@ export function WeeklyView({ habits, records, onToggleHabit }: WeeklyViewProps) 
                                     if (!isStarted || isEnded) {
                                         return <div key={habit.id} className="aspect-square rounded-xl invisible" />;
                                     }
+
+                                    const status = dayRecord[habit.id];
 
                                     return (
                                         <button
@@ -76,7 +88,16 @@ export function WeeklyView({ habits, records, onToggleHabit }: WeeklyViewProps) 
                     );
                 })}
             </div>
-            {/* Labels if needed, or maybe simple tooltip */}
-        </div>
+
+
+            <DayDetailsModal
+                isOpen={!!selectedDate}
+                onClose={() => setSelectedDate(null)}
+                date={selectedDate}
+                habits={habits}
+                dayRecord={selectedDate ? (records[format(selectedDate, 'yyyy-MM-dd')] || {}) : {}}
+                onToggleHabit={(habitId) => selectedDate && onToggleHabit(selectedDate, habitId)}
+            />
+        </div >
     );
 }
