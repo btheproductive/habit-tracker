@@ -102,9 +102,9 @@ export function YearlyHeatmap({ records, year }: YearlyHeatmapProps) {
               className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/50"
               style={{
                 position: 'relative',
-                left: `${weekIndex * 14}px`, // Adjusted for larger gap
+                left: `${weekIndex * 15}px`, // Adjusted for correct gap (12px + 3px)
                 marginRight: i < monthLabels.length - 1
-                  ? `${(monthLabels[i + 1].weekIndex - weekIndex - 1) * 14}px`
+                  ? `${(monthLabels[i + 1].weekIndex - weekIndex - 1) * 15}px`
                   : 0
               }}
             >
