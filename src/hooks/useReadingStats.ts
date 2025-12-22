@@ -66,6 +66,7 @@ export interface OverallStats {
   consistencyScore: number;
   bestDayOfWeek: { day: string; percentage: number } | null;
   worstDayOfWeek: { day: string; percentage: number } | null;
+  dayOfWeekDistribution: { [key: number]: { done: number; total: number } };
   averageTimeBetweenSessions: number | null; // in days
   monthlyGoalPrediction: { predictedDays: number; onTrack: boolean; daysNeeded: number } | null;
   weeklyTrend: WeeklyTrend[];
@@ -307,6 +308,7 @@ export function useReadingStats(records: ReadingRecord) {
       consistencyScore,
       bestDayOfWeek,
       worstDayOfWeek,
+      dayOfWeekDistribution: dayOfWeekStats,
       averageTimeBetweenSessions,
       monthlyGoalPrediction,
       weeklyTrend,
