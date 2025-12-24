@@ -14,10 +14,24 @@ Nel sistema di tracciamento, la logica per i giorni non segnati è stata aggiorn
     -   **Nuova Logica**: Un giorno non segnato (vuoto) **NON INTERROMPE** la serie. Viene considerato come un giorno di "riposo" o un giorno in cui l'attività non era prevista.
     -   La serie si mantiene "congelata" attraverso i giorni vuoti.
     -   **Interruzione**: La serie si azzera **SOLO** se viene registrato esplicitamente uno stato "Mancato" (rosso).
-    -   *Esempio*: Fatto (Lun) -> Vuoto (Mar) -> Fatto (Mer). La streak sarà di 2 giorni.
-    -   *Esempio*: Fatto (Lun) -> Mancato (Mar) -> Fatto (Mer). La streak si rompe martedì. All'atto di Mercoledì la streak riparte da 1.
+
+---
+
+## Nuove Implementazioni (Statistiche Avanzate)
+
+### Confronto Temporale (Period Comparison)
+È stato aggiunto un modulo che permette di confrontare la percentuale di completamento attuale con quella del periodo precedente.
+-   **Periodi supportati**: Settimana, Mese, Anno.
+-   **Visualizzazione**: Mostra la variazione percentuale (es. +15%, -5%) con indicatori colorati (Verde per miglioramenti, Rosso per peggioramenti).
+
+### Analisi Critica (Critical Analysis)
+Un algoritmo analizza lo storico degli ultimi 90 giorni per identificare pattern di fallimento.
+-   **Giorno Nero**: Per ogni abitudine, viene calcolato qual è il giorno della settimana con il tasso di completamento più basso.
+-   **Focus**: Il sistema evidenzia automaticamente le abitudini sotto l'85% di completamento, suggerendo il giorno specifico su cui porre attenzione.
+
+---
 
 ## Navigazione
 
-- La pagina dedicata "Mappa" è stata rimossa per semplificare l'interfaccia.
-- La visualizzazione a mappa di calore (Heatmap) è **ancora disponibile** all'interno della pagina **Statistiche**, sotto il tab "Mappa".
+- La pagina dedicata "Mappa" è stata rimossa.
+- La visualizzazione a mappa di calore (Heatmap) è disponibile all'interno della pagina **Statistiche**.

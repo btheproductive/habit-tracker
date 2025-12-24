@@ -38,6 +38,15 @@ export interface HabitComparison {
     year: ComparisonStat;
 }
 
+export interface CriticalHabitStat {
+    habitId: string;
+    title: string;
+    color: string;
+    completionRate: number;
+    worstDay: string; // e.g., "Monday"
+    worstDayRate: number; // Completion rate on that specific day
+}
+
 export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
     return useMemo(() => {
         const today = startOfDay(new Date());
@@ -308,6 +317,12 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
             ? Math.round(habitStats.reduce((acc, curr) => acc + curr.completionRate, 0) / habitStats.length)
             : 0;
 
+        // 6. Calculate Critical Stats
+        // We need detailed weekday stats per habit to find the worst day
+        // We can reuse the loop logic or create a helper. 
+        // Let's create a dedicated helper for critical stats to keep main body clean.
+        const criticalHabits = calculateCriticalStats(goals, logs, today);
+
         const statsResult = {
             habitStats,
             heatmapData,
@@ -320,58 +335,17 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
                 if (b.dayIndex === 0) return -1;
                 return a.dayIndex - b.dayIndex;
             }),
-            globalStats: {
-                totalActiveDays, // This might need better definition
-                globalSuccessRate,
-                bestStreak: Math.max(...habitStats.map(h => h.longestStreak), 0)
-            },
-            comparisons: [] as HabitComparison[] // Placeholder, populated below
+            totalActiveDays, // This might need better definition
+            globalSuccessRate,
+            bestStreak: Math.max(...habitStats.map(h => h.longestStreak), 0),
+            worstDay: weekdayStats.reduce((min, curr) => curr.rate < min.rate && curr.totalActive > 0 ? curr : min, weekdayStats[0]).dayName,
+            comparisons: comparisons,
+            criticalHabits: criticalHabits.sort((a, b) => a.completionRate - b.completionRate) // Sort by lowest rate first
         };
-
-        // 5. Calculate Comparisons
-        // Week
-        const startWeek = startOfWeek(today, { locale: it, weekStartsOn: 1 });
-        const endWeek = endOfWeek(today, { locale: it, weekStartsOn: 1 }); // Actually until today? Usually comparing full weeks is fairer, or "week to date". Let's do week to date.
-        // Doing full previous week vs current week-to-date is skewed. 
-        // Better: Last 7 days vs Previous 7 days? Or ISO Week.
-        // Let's stick with specific ISO windows but cut off 'endCurrent' at 'today' to be fair if we want "to-date".
-        // Actually, simplest and most common is Current Week vs Last Week (full). 
-        // If current week is incomplete, rate is calc on days passed.
-
-        const currentWeekStart = startOfWeek(today, { locale: it, weekStartsOn: 1 });
-        const currentWeekEnd = today; // Up to now
-        const prevWeekStart = subWeeks(currentWeekStart, 1);
-        const prevWeekEnd = subDays(currentWeekStart, 1);
-
-        // Month
-        const currentMonthStart = startOfMonth(today);
-        const currentMonthEnd = today;
-        const prevMonthStart = subMonths(currentMonthStart, 1);
-        const prevMonthEnd = subDays(currentMonthStart, 1); // End of prev month
-
-        // Year
-        const currentYearStart = startOfYear(today);
-        const currentYearEnd = today;
-        const prevYearStart = subYears(currentYearStart, 1);
-        const prevYearEnd = subDays(currentYearStart, 1); // End of prev year
-
-        const weekStats = calculatePeriodStats(goals, logs, currentWeekStart, currentWeekEnd, prevWeekStart, prevWeekEnd, 'week');
-        const monthStats = calculatePeriodStats(goals, logs, currentMonthStart, currentMonthEnd, prevMonthStart, prevMonthEnd, 'month');
-        const yearStats = calculatePeriodStats(goals, logs, currentYearStart, currentYearEnd, prevYearStart, prevYearEnd, 'year');
-
-        const comparisons: HabitComparison[] = goals.map(g => ({
-            habitId: g.id,
-            week: weekStats[g.id],
-            month: monthStats[g.id],
-            year: yearStats[g.id]
-        }));
 
         // Inject into return object
         // We can't easily inject cleanly without changing return type or using the object created above
-        return {
-            ...statsResult,
-            comparisons
-        };
+        return statsResult;
 
     }, [goals, logs]);
 }
@@ -433,4 +407,70 @@ function calculatePeriodStats(
     });
 
     return result;
+}
+
+function calculateCriticalStats(goals: Goal[], logs: GoalLogsMap, today: Date): CriticalHabitStat[] {
+    const criticalStats: CriticalHabitStat[] = [];
+
+    // Analyze over past X days (e.g. 90 days) for meaningful data
+    const analysisStart = subDays(today, 90);
+
+    goals.forEach(goal => {
+        // Init weekday counters
+        const weekdayCounts = [0, 0, 0, 0, 0, 0, 0].map(() => ({ total: 0, done: 0 }));
+
+        let overallDone = 0;
+        let overallTotal = 0;
+
+        const effectiveStart = isBefore(analysisStart, new Date(goal.start_date)) ? new Date(goal.start_date) : analysisStart;
+
+        if (!isAfter(effectiveStart, today)) {
+            eachDayOfInterval({ start: effectiveStart, end: today }).forEach(day => {
+                const dayIndex = day.getDay();
+                const key = format(day, 'yyyy-MM-dd');
+
+                weekdayCounts[dayIndex].total++;
+                if (logs[key]?.[goal.id] === 'done') {
+                    weekdayCounts[dayIndex].done++;
+                    overallDone++;
+                }
+                overallTotal++;
+            });
+        }
+
+        // Calculate rate per day
+        let worstDay = '';
+        let worstDayRate = 101;
+
+        weekdayCounts.forEach((stat, index) => {
+            if (stat.total < 4) return; // Ignore days with too few occurrences (less than 4 weeks of data for that day)
+
+            const rate = Math.round((stat.done / stat.total) * 100);
+            if (rate < worstDayRate) {
+                worstDayRate = rate;
+                // Get day name
+                const date = new Date(2024, 0, 7 + index); // Sunday 7th Jan 2024
+                worstDay = format(date, 'EEEE', { locale: it });
+            }
+        });
+
+        // Use 'Overall' rate or 100 if no data
+        const completionRate = overallTotal > 0 ? Math.round((overallDone / overallTotal) * 100) : 0;
+
+        if (worstDayRate === 101) {
+            worstDay = 'N/A'; // No sufficient data
+            worstDayRate = completionRate; // Default to average
+        }
+
+        criticalStats.push({
+            habitId: goal.id,
+            title: goal.title,
+            color: goal.color,
+            completionRate,
+            worstDay,
+            worstDayRate
+        });
+    });
+
+    return criticalStats;
 }

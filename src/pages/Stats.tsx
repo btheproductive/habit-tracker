@@ -6,6 +6,7 @@ import { TrendChart } from '@/components/stats/TrendChart';
 import { HabitRadar } from '@/components/stats/HabitRadar';
 import { DayOfWeekChart } from '@/components/stats/DayOfWeekChart';
 import { PeriodComparison } from '@/components/stats/PeriodComparison';
+import { CriticalAnalysis } from '@/components/stats/CriticalAnalysis';
 import { Trophy } from 'lucide-react';
 
 const Stats = () => {
@@ -41,6 +42,9 @@ const Stats = () => {
 
             {/* Period Comparison */}
             <PeriodComparison comparisons={stats.comparisons} goals={goals} />
+
+            {/* Critical Analysis */}
+            <CriticalAnalysis criticalHabits={stats.criticalHabits} />
 
             {/* Charts Row 1: Trends & Radar */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -79,38 +83,47 @@ const Stats = () => {
                     {stats.habitStats.length === 0 ? (
                         <p className="text-muted-foreground text-center py-8">Nessuna abitudine tracciata ancora.</p>
                     ) : (
-                        stats.habitStats.map(habit => (
-                            <div key={habit.id} className="glass-card rounded-xl p-4 flex items-center justify-between group">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-xl group-hover:scale-110 transition-transform duration-300 shadow-lg" style={{ color: habit.color, borderColor: `${habit.color}40`, boxShadow: `0 0 20px ${habit.color}10` }}>
-                                        {/* Simple initial or icon placeholder if available, else circle */}
-                                        <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: habit.color }} />
+                        stats.habitStats.map(habit => {
+                            const criticalStat = stats.criticalHabits.find(c => c.habitId === habit.id);
+                            return (
+                                <div key={habit.id} className="glass-card rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group">
+                                    <div className="flex items-center gap-4 w-full sm:w-auto">
+                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-xl group-hover:scale-110 transition-transform duration-300 shadow-lg shrink-0" style={{ color: habit.color, borderColor: `${habit.color}40`, boxShadow: `0 0 20px ${habit.color}10` }}>
+                                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: habit.color }} />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <span className="font-semibold text-foreground text-lg truncate block">{habit.title}</span>
+                                            <div className="h-1 w-20 bg-secondary rounded-full mt-1 overflow-hidden">
+                                                <div className="h-full bg-primary transition-all duration-500" style={{ width: `${habit.completionRate}%`, backgroundColor: habit.color }} />
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <span className="font-semibold text-foreground text-lg">{habit.title}</span>
-                                        <div className="h-1 w-20 bg-secondary rounded-full mt-1 overflow-hidden">
-                                            <div className="h-full bg-primary transition-all duration-500" style={{ width: `${habit.completionRate}%`, backgroundColor: habit.color }} />
+
+                                    <div className="flex gap-4 sm:gap-8 text-sm text-muted-foreground w-full sm:w-auto justify-between sm:justify-end">
+                                        {criticalStat && criticalStat.worstDay !== 'N/A' && (
+                                            <div className="flex flex-col items-end hidden md:flex">
+                                                <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5 text-destructive">Worst</span>
+                                                <span className="font-medium text-foreground">{criticalStat.worstDay}</span>
+                                            </div>
+                                        )}
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5 flex items-center gap-1">
+                                                <Trophy className="w-3 h-3 text-yellow-500" /> Best
+                                            </span>
+                                            <span className="font-mono text-xl font-bold text-foreground">{habit.longestStreak} <span className="text-xs font-sans font-normal opacity-50">gg</span></span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Serie</span>
+                                            <span className="font-mono text-xl font-bold text-foreground">{habit.currentStreak} <span className="text-xs font-sans font-normal opacity-50">gg</span></span>
+                                        </div>
+                                        <div className="flex flex-col items-end">
+                                            <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Rate</span>
+                                            <span className="font-mono text-xl font-bold text-foreground">{habit.completionRate}<span className="text-sm">%</span></span>
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex gap-2 sm:gap-8 text-sm text-muted-foreground text-right">
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5 flex items-center gap-1">
-                                            <Trophy className="w-3 h-3 text-yellow-500" /> Best
-                                        </span>
-                                        <span className="font-mono text-xl font-bold text-foreground">{habit.longestStreak} <span className="text-xs font-sans font-normal opacity-50">gg</span></span>
-                                    </div>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Serie</span>
-                                        <span className="font-mono text-xl font-bold text-foreground">{habit.currentStreak} <span className="text-xs font-sans font-normal opacity-50">gg</span></span>
-                                    </div>
-                                    <div className="flex flex-col items-end">
-                                        <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Rate</span>
-                                        <span className="font-mono text-xl font-bold text-foreground">{habit.completionRate}<span className="text-sm">%</span></span>
-                                    </div>
-                                </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
             </div>

@@ -7,13 +7,14 @@ interface StatsOverviewProps {
         totalActiveDays: number;
         globalSuccessRate: number;
         bestStreak: number;
+        worstDay?: string;
     };
     bestHabit?: HabitStat;
 }
 
 export function StatsOverview({ globalStats, bestHabit }: StatsOverviewProps) {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {/* Success Rate */}
             <div className="bg-card/50 backdrop-blur-sm rounded-3xl p-6 border border-white/5 shadow-sm relative overflow-hidden group">
                 <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
@@ -68,6 +69,27 @@ export function StatsOverview({ globalStats, bestHabit }: StatsOverviewProps) {
                                 {bestHabit.title}
                             </span>
                             <span className="text-sm text-muted-foreground">{bestHabit.completionRate}% completamento</span>
+                        </div>
+                    ) : (
+                        <span className="text-muted-foreground text-sm">Nessun dato</span>
+                    )}
+                </div>
+            </div>
+            {/* Worst Day */}
+            <div className="bg-card/50 backdrop-blur-sm rounded-3xl p-6 border border-white/5 shadow-sm relative overflow-hidden group">
+                <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                    <div className="text-4xl">⚠️</div>
+                </div>
+                <div>
+                    <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                        <span className="text-sm font-medium">Giorno Peggiore</span>
+                    </div>
+                    {globalStats.worstDay ? (
+                        <div>
+                            <span className="text-2xl font-display font-bold text-foreground block truncate">
+                                {globalStats.worstDay}
+                            </span>
+                            <span className="text-sm text-muted-foreground">Focus richiesto</span>
                         </div>
                     ) : (
                         <span className="text-muted-foreground text-sm">Nessun dato</span>
