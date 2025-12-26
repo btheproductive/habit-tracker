@@ -185,6 +185,30 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      },
+      goal_category_settings: {
+        Row: {
+          id: string
+          user_id: string
+          mappings: { [key: string]: string }
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          mappings?: { [key: string]: string }
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          mappings?: { [key: string]: string }
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
     }
     Views: {
