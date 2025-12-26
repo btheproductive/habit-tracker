@@ -42,3 +42,41 @@ Un algoritmo analizza lo storico degli ultimi 90 giorni per identificare pattern
 Risolto un errore critico che causava il crash dell'applicazione all'apertura della pagina Statistiche.
 - **Problema**: Il componente `StatsOverview` tentava di accedere a `globalSuccessRate` su un oggetto non definito. Questo era causato da una discrepanza tra la struttura dati "piatta" restituita dall'hook `useHabitStats` e l'oggetto annidato `globalStats` che il componente si aspettava.
 - **Soluzione**: Aggiornato `src/pages/Stats.tsx` per costruire correttamente l'oggetto `globalStats` utilizzando le proprietà (`totalActiveDays`, `globalSuccessRate`, `bestStreak`, `worstDay`) prima di passarle al componente.
+
+---
+
+## Gestione Macro Obiettivi (Long Term Goals)
+
+È stata implementata una sezione completa per la gestione degli obiettivi a lungo termine, ispirata alla struttura di Notion ma integrata nel database dell'applicazione.
+
+### Struttura Dati
+- **Tabella Database**: `long_term_goals`
+- **Tipi supportati**: Annuali, Mensili, Settimanali.
+- **Campi principali**: `user_id`, `title`, `is_completed`, `type`, `year`, `month`, `week_number`, `color`.
+
+### Funzionalità Implementate
+
+#### 1. Importazione ed Esportazione (Backup)
+- **Esportazione**: È presente un pulsante di download che genera un file `.csv` contenente TUTTI gli obiettivi (inclusi quelli completati) per scopi di backup o analisi esterna. Include una modale di conferma.
+- **Importazione**: Permette di caricare un file `.csv` per ripristinare o aggiornare i dati. Utilizza l'ID per aggiornare record esistenti (upsert) o crearne di nuovi.
+- **Migrazione Dati Storici**: Sono stati importati tramite script SQL dedicati tutti gli obiettivi storici provenienti da Notion per gli anni:
+    - **2022**
+    - **2023**
+    - **2024**
+    - **2025**
+
+#### 2. Miglioramenti UI/UX e Visualizzazione
+- **Selettore Temporale Dinamico**:
+    - Gli anni selezionabili partono dal **2022** fino a **5 anni nel futuro** rispetto a quello corrente (es. 2030).
+    - I periodi "passati" (anni, mesi o settimane precedenti a quella attuale) sono visualizzati in **corsivo** e con colore attenuato (`text-muted-foreground`) per distinguerli chiaramente da quelli attuali o futuri.
+- **Ordinamento Intelligente**:
+    - Gli obiettivi **completati** vengono spostati automaticamente in fondo alla lista.
+    - È stato inserito un **separatore visivo** ("COMPLETATI") con spaziatura dedicata (`my-6`) per dividere nettamente gli obiettivi attivi da quelli conclusi.
+
+#### 3. Categorie e Colori
+È stato introdotto un sistema di categorizzazione basato sui colori per raggruppare visivamente gli obiettivi affini.
+- **Palette Personalizzata**: 
+    - **Rosso** (Rose), **Arancione**, **Giallo** (Amber), **Blu**, **Viola**, **Rosa** (Fuchsia), **Ciano**.
+    - Il colore **Verde** è stato volutamente rimosso dalle categorie selezionabili ed è **riservato esclusivamente** allo stato "Completato" (la card diventa verde pallido e opaca quando la checkbox è spuntata).
+- **Dot Picker**: Ogni card ha un indicatore colorato (visibile all'hover) che permette di assegnare o cambiare rapidamente la categoria.
+- **Raggruppamento**: Gli obiettivi con lo stesso colore vengono raggruppati vicini nell'ordinamento.
