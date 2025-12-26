@@ -8,11 +8,25 @@ import {
     RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
     ComposedChart, Line
 } from 'recharts';
-import { Loader2, Trophy, Target, TrendingUp, CheckCircle2, Zap, Brain, Rocket } from 'lucide-react';
+import { Loader2, Trophy, Target, TrendingUp, CheckCircle2, Zap, Brain, Rocket, Calendar, Activity } from 'lucide-react';
 import { useGoalCategories } from '@/hooks/useGoalCategories';
 
 interface MacroGoalsStatsProps {
+    year: number | string;
+}
+
+type GoalType = 'annual' | 'monthly' | 'weekly' | 'stats';
+
+interface LongTermGoal {
+    id: string;
+    title: string;
+    is_completed: boolean;
+    type: GoalType;
     year: number;
+    month: number | null;
+    week_number: number | null;
+    created_at: string;
+    color: string | null;
 }
 
 export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
@@ -20,12 +34,39 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
     const { data: allGoals, isLoading } = useQuery({
         queryKey: ['longTermGoals', 'stats', year],
         queryFn: async () => {
-            const { data, error } = await supabase
-                .from('long_term_goals')
-                .select('*')
-                .eq('year', year);
-            if (error) throw error;
-            return data;
+            let allRows: LongTermGoal[] = [];
+            let from = 0;
+            const step = 1000;
+            let keepFetching = true;
+
+            while (keepFetching) {
+                let query = supabase
+                    .from('long_term_goals')
+                    .select('*');
+
+                if (year !== 'all') {
+                    query = query.eq('year', typeof year === 'string' ? parseInt(year) : year);
+                }
+
+                // Range is inclusive
+                const { data, error } = await query
+                    .range(from, from + step - 1);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    allRows = [...allRows, ...(data as LongTermGoal[])];
+                    if (data.length < step) {
+                        keepFetching = false;
+                    } else {
+                        from += step;
+                    }
+                } else {
+                    keepFetching = false; // No more data
+                }
+            }
+
+            return allRows;
         },
     });
 
@@ -36,7 +77,7 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
     if (!allGoals || allGoals.length === 0) {
         return (
             <div className="text-center p-12 border border-dashed border-white/10 rounded-xl text-muted-foreground">
-                Nessun dato disponibile per il {year}. Aggiungi qualche obiettivo!
+                Nessun dato disponibile per {year === 'all' ? 'il periodo selezionato' : `il ${year}`}. Aggiungi qualche obiettivo!
             </div>
         );
     }
@@ -46,67 +87,29 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
     const completedGoals = allGoals.filter(g => g.is_completed).length;
     const completionRate = Math.round((completedGoals / totalGoals) * 100) || 0;
 
+    // Calculate dynamic start year for "All Time" label
+    const minYear = allGoals.length > 0 ? Math.min(...allGoals.map(g => g.year)) : new Date().getFullYear();
+
     const byType = {
         annual: allGoals.filter(g => g.type === 'annual').length,
         monthly: allGoals.filter(g => g.type === 'monthly').length,
         weekly: allGoals.filter(g => g.type === 'weekly').length,
     };
-    const mainFocus = Object.entries(byType).sort((a, b) => b[1] - a[1])[0][0];
 
-    // --- Data Preparation ---
+    // Calculate best type for generic use
+    const typeStats = [
+        { type: 'Annuale', total: byType.annual, completed: allGoals.filter(g => g.type === 'annual' && g.is_completed).length },
+        { type: 'Mensile', total: byType.monthly, completed: allGoals.filter(g => g.type === 'monthly' && g.is_completed).length },
+        { type: 'Settimanale', total: byType.weekly, completed: allGoals.filter(g => g.type === 'weekly' && g.is_completed).length },
+    ].map(t => ({
+        ...t,
+        rate: t.total > 0 ? Math.round((t.completed / t.total) * 100) : 0
+    })).sort((a, b) => b.rate - a.rate || b.completed - a.completed);
 
-    // 1. Monthly Data (Progress & Velocity)
-    const monthlyData = Array.from({ length: 12 }, (_, i) => ({
-        name: new Date(2024, i).toLocaleString('it-IT', { month: 'short' }),
-        monthIndex: i + 1,
-        total: 0,
-        completed: 0,
-        rate: 0,
-        cumulativeTotal: 0,
-        cumulativeCompleted: 0,
-    }));
-
-    // Distribute goals to months
-    // For 'annual' goals, we'll assign them to the month they were created or Jan if missing, 
-    // but for "Velocity" it's often better to see them accumulate. 
-    // Let's simplified: Map goals to their specific month. Annual goals -> effectively "Jan" or spread? 
-    // Let's count Annual goals as "Active throughout", adding to the total from the start.
-
-    let runningTotal = 0;
-    let runningCompleted = 0;
-
-    // Pre-calculate annual base
-    const annualGoals = allGoals.filter(g => g.type === 'annual');
-    const annualTotal = annualGoals.length;
-    const annualCompleted = annualGoals.filter(g => g.is_completed).length;
-
-    // We will initialize the cumulative with annual counts, but detailed monthly stats only track that month's specific goals
-    // flexible choice: let's keep monthly stats specific to "monthly/weekly" goals for the bars, 
-    // but use ALL goals for the Velocity line.
-
-    allGoals.forEach(g => {
-        let mIdx = 0; // Default Jan
-        if (g.month) mIdx = g.month - 1;
-        // Clamp to 0-11
-        if (mIdx < 0) mIdx = 0;
-        if (mIdx > 11) mIdx = 11;
-
-        monthlyData[mIdx].total++;
-        if (g.is_completed) monthlyData[mIdx].completed++;
-    });
-
-    // Calculate rates and cumulatives
-    monthlyData.forEach((d, i) => {
-        d.rate = d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0;
-
-        runningTotal += d.total;
-        runningCompleted += d.completed;
-        d.cumulativeTotal = runningTotal;
-        d.cumulativeCompleted = runningCompleted;
-    });
+    const bestType = typeStats[0];
 
 
-    // 2. Category Radar Data
+    // --- Category Data (Common) ---
     const categoryStats: Record<string, { total: number; completed: number }> = {};
     allGoals.forEach(g => {
         const c = g.color || 'null';
@@ -122,8 +125,8 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
         total: stats.total // Keep for reference
     })).sort((a, b) => b.A - a.A);
 
+    const bestCategory = radarData.length > 0 ? radarData[0] : null;
 
-    // 3. Color Distribution (Pie)
     const chartColors: Record<string, string> = {
         'red': '#f43f5e', 'orange': '#f97316', 'yellow': '#fbbf24', 'green': '#10b981',
         'blue': '#2563eb', 'purple': '#7c3aed', 'pink': '#d946ef', 'cyan': '#06b6d4', 'null': '#525252'
@@ -134,27 +137,218 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
         fill: chartColors[key] || '#888888'
     })).sort((a, b) => b.value - a.value);
 
+    // --- MODE SWITCHING: All Time vs Single Year ---
+    const isAllTime = year === 'all';
 
-    // --- Insights Generation ---
-    // 1. Best Type Logic
-    const typeStats = [
-        { type: 'Annuale', total: byType.annual, completed: allGoals.filter(g => g.type === 'annual' && g.is_completed).length },
-        { type: 'Mensile', total: byType.monthly, completed: allGoals.filter(g => g.type === 'monthly' && g.is_completed).length },
-        { type: 'Settimanale', total: byType.weekly, completed: allGoals.filter(g => g.type === 'weekly' && g.is_completed).length },
-    ].map(t => ({
-        ...t,
-        rate: t.total > 0 ? Math.round((t.completed / t.total) * 100) : 0
-    })).sort((a, b) => b.rate - a.rate || b.completed - a.completed);
+    if (isAllTime) {
+        // --- ALL TIME CALCULATIONS ---
 
-    const bestType = typeStats[0];
+        // Group by Year
+        const yearlyStatsMap: Record<number, { total: number; completed: number; rate: number }> = {};
+        allGoals.forEach(g => {
+            if (!yearlyStatsMap[g.year]) yearlyStatsMap[g.year] = { total: 0, completed: 0, rate: 0 };
+            yearlyStatsMap[g.year].total++;
+            if (g.is_completed) yearlyStatsMap[g.year].completed++;
+        });
 
-    // 2. Best Month Logic (Efficiency > Volume)
+        const yearlyData = Object.entries(yearlyStatsMap).map(([y, s]) => ({
+            year: y,
+            total: s.total,
+            completed: s.completed,
+            rate: Math.round((s.completed / s.total) * 100) || 0
+        })).sort((a, b) => parseInt(a.year) - parseInt(b.year));
+
+        // Insights for All Time
+        const bestYear = [...yearlyData].sort((a, b) => b.rate - a.rate || b.completed - a.completed)[0];
+        const mostProductiveYear = [...yearlyData].sort((a, b) => b.completed - a.completed)[0];
+
+        return (
+            <div className="space-y-8 animate-fade-in pb-10">
+                {/* HEADLINE METRICS - Premium Style */}
+                <div className="grid gap-6 md:grid-cols-4">
+                    <Card className="bg-gradient-to-br from-indigo-500/10 to-blue-600/10 border-indigo-500/20 shadow-lg shadow-indigo-500/5">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium text-indigo-400">Totale Storico</CardTitle>
+                            <Target className="h-4 w-4 text-indigo-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">{totalGoals}</div>
+                            <p className="text-xs text-muted-foreground mt-1">Obiettivi tracciati dal {minYear}</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-emerald-500/10 to-teal-500/10 border-emerald-500/20 shadow-lg shadow-emerald-500/5">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium text-emerald-400">Successo Globale</CardTitle>
+                            <Trophy className="h-4 w-4 text-emerald-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">{completionRate}%</div>
+                            <p className="text-xs text-muted-foreground mt-1">{completedGoals} obiettivi completati</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-amber-500/20 shadow-lg shadow-amber-500/5">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium text-amber-400">Anno Migliore</CardTitle>
+                            <Calendar className="h-4 w-4 text-amber-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">{bestYear?.year || 'N/A'}</div>
+                            <p className="text-xs text-muted-foreground mt-1">{bestYear?.rate}% completamento</p>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="bg-gradient-to-br from-cyan-500/10 to-sky-500/10 border-cyan-500/20 shadow-lg shadow-cyan-500/5">
+                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                            <CardTitle className="text-sm font-medium text-cyan-400">Anno Più Produttivo</CardTitle>
+                            <Activity className="h-4 w-4 text-cyan-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-white">{mostProductiveYear?.year || 'N/A'}</div>
+                            <p className="text-xs text-muted-foreground mt-1">{mostProductiveYear?.total} obiettivi totali</p>
+                        </CardContent>
+                    </Card>
+                </div>
+
+                {/* MAIN CHARTS - Separated logic from Single Year */}
+                <div className="grid gap-6 md:grid-cols-2">
+                    {/* 1. Yearly Progression Bar Chart */}
+                    <Card className="md:col-span-2 bg-card/40 border-white/5 backdrop-blur-sm p-2">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-blue-500" />
+                                <CardTitle>Progressione Annuale</CardTitle>
+                            </div>
+                            <CardDescription>Confronto anno per anno del volume di obiettivi e completamenti</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[400px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <ComposedChart data={yearlyData} margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                    <XAxis dataKey="year" stroke="#888888" fontSize={14} tickLine={false} axisLine={false} />
+                                    <YAxis yAxisId="left" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis yAxisId="right" orientation="right" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="%" domain={[0, 100]} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#09090b', border: '1px solid #27272a', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                                        cursor={{ fill: '#ffffff05' }}
+                                    />
+                                    <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                                    <Bar yAxisId="left" dataKey="total" name="Totale Obiettivi" fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={40} fillOpacity={0.8} />
+                                    <Bar yAxisId="left" dataKey="completed" name="Completati" fill="#10b981" radius={[4, 4, 0, 0]} barSize={40} fillOpacity={0.8} />
+                                    <Line yAxisId="right" type="monotone" dataKey="rate" name="Tasso Successo %" stroke="#f59e0b" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                                </ComposedChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* 2. Category Radar (Same as before, good for aggregation) */}
+                    <Card className="bg-card/40 border-white/5 backdrop-blur-sm">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <Target className="w-5 h-5 text-cyan-500" />
+                                <CardTitle>Performance per Categoria (Storico)</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="h-[350px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
+                                    <PolarGrid stroke="#ffffff20" />
+                                    <PolarAngleAxis
+                                        dataKey="subject"
+                                        tick={{ fill: '#a1a1aa', fontSize: 13, fontWeight: 500 }}
+                                    />
+                                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                                    <Radar
+                                        name="Success Rate"
+                                        dataKey="A"
+                                        stroke="#06b6d4"
+                                        fill="#06b6d4"
+                                        fillOpacity={0.5}
+                                    />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1f1f1f', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}
+                                        itemStyle={{ color: '#fff' }}
+                                        formatter={(value: number) => [`${value}%`, 'Successo']}
+                                    />
+                                </RadarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* 3. Type Distribution */}
+                    <Card className="bg-card/40 border-white/5 backdrop-blur-sm">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <Brain className="w-5 h-5 text-purple-500" />
+                                <CardTitle>Distribuzione Tipologie</CardTitle>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="h-[350px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={typeStats} layout="vertical" margin={{ left: 20 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" horizontal={true} vertical={false} />
+                                    <XAxis type="number" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis dataKey="type" type="category" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} width={80} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1f1f1f', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}
+                                        cursor={{ fill: '#ffffff05' }}
+                                    />
+                                    <Bar dataKey="rate" name="Successo %" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={30}>
+                                        {/* Label list could be cool */}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+        );
+    }
+
+    // --- SINGLE YEAR LOGIC (Old logic mostly preserved but cleaner) ---
+    // (Existing Monthly/Timeline logic remains here for else branch)
+
+    // ... [Previous implementation for single year]
+    // --- SINGLE YEAR LOGIC ---
+
+    // 1. Monthly Data Preparation (Specific for Single Year)
+    const y = typeof year === 'string' ? parseInt(year) : year;
+    const monthlyData = Array.from({ length: 12 }, (_, i) => ({
+        name: new Date(y, i).toLocaleString('it-IT', { month: 'short' }),
+        monthIndex: i + 1,
+        total: 0,
+        completed: 0,
+        rate: 0,
+        cumulativeTotal: 0,
+        cumulativeCompleted: 0,
+    }));
+
+    let runningTotal = 0;
+    let runningCompleted = 0;
+
+    allGoals.forEach(g => {
+        let mIdx = 0;
+        if (g.month) mIdx = g.month - 1;
+        if (mIdx < 0) mIdx = 0;
+        if (mIdx > 11) mIdx = 11;
+
+        monthlyData[mIdx].total++;
+        if (g.is_completed) monthlyData[mIdx].completed++;
+    });
+
+    monthlyData.forEach(d => {
+        d.rate = d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0;
+        runningTotal += d.total;
+        runningCompleted += d.completed;
+        d.cumulativeTotal = runningTotal;
+        d.cumulativeCompleted = runningCompleted;
+    });
+
+    // 2. Insights
     const bestMonth = [...monthlyData]
-        .filter(m => m.total > 0) // Only consider active months
+        .filter(m => m.total > 0)
         .sort((a, b) => b.rate - a.rate || b.completed - a.completed)[0];
-
-    // 3. Category Logic
-    const bestCategory = radarData.length > 0 ? radarData[0] : null;
 
     return (
         <div className="space-y-6 animate-fade-in pb-10">
@@ -291,9 +485,12 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
                     </CardHeader>
                     <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
+                            <RadarChart cx="50%" cy="50%" outerRadius="65%" data={radarData}>
                                 <PolarGrid stroke="#ffffff20" />
-                                <PolarAngleAxis dataKey="subject" tick={{ fill: '#888888', fontSize: 12 }} />
+                                <PolarAngleAxis
+                                    dataKey="subject"
+                                    tick={{ fill: '#a1a1aa', fontSize: 13, fontWeight: 500 }}
+                                />
                                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
                                 <Radar
                                     name="Success Rate"
@@ -305,7 +502,7 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
                                 <Tooltip
                                     contentStyle={{ backgroundColor: '#1f1f1f', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}
                                     itemStyle={{ color: '#fff' }}
-                                    formatter={(value) => [`${value}%`, 'Successo']}
+                                    formatter={(value: number) => [`${value}%`, 'Successo']}
                                 />
                             </RadarChart>
                         </ResponsiveContainer>

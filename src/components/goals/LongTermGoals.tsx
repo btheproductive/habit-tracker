@@ -36,7 +36,7 @@ import { it } from 'date-fns/locale';
 
 type GoalType = 'annual' | 'monthly' | 'weekly' | 'stats';
 
-interface LongTermGoal {
+export interface LongTermGoal {
     id: string;
     title: string;
     is_completed: boolean;
@@ -60,7 +60,7 @@ const goalColors = [
 ];
 
 export function LongTermGoals() {
-    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+    const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
     const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
     const [selectedWeek, setSelectedWeek] = useState<number>(1); // Default to week 1, logic can be improved
     const [view, setView] = useState<GoalType>('annual');
@@ -110,10 +110,13 @@ export function LongTermGoals() {
             let query = supabase.from('long_term_goals')
                 .select('*')
                 .eq('type', view)
-                .eq('year', selectedYear)
                 .order('is_completed', { ascending: true })
                 .order('color', { ascending: true, nullsFirst: false }) // Group by color
                 .order('created_at', { ascending: true });
+
+            if (selectedYear !== 'all') {
+                query = query.eq('year', parseInt(selectedYear));
+            }
 
             if (view === 'monthly') {
                 query = query.eq('month', selectedMonth);
@@ -125,6 +128,7 @@ export function LongTermGoals() {
             if (error) throw error;
             return data as LongTermGoal[];
         },
+        enabled: view !== 'stats', // Disable query when in stats view
     });
 
     const createGoalMutation = useMutation({
@@ -136,7 +140,7 @@ export function LongTermGoals() {
                 user_id: user.id,
                 title,
                 type: view,
-                year: selectedYear,
+                year: selectedYear === 'all' ? new Date().getFullYear() : parseInt(selectedYear),
                 month: view !== 'annual' ? selectedMonth : null,
                 week_number: view === 'weekly' ? selectedWeek : null,
                 is_completed: false, // Default to false
@@ -247,9 +251,29 @@ export function LongTermGoals() {
     ];
 
 
-    // Generate year range: 2022 to (Current Year + 5)
+    // Fetch minimum year from database
+    const { data: minYearData } = useQuery({
+        queryKey: ['longTermGoals', 'minYear'],
+        queryFn: async () => {
+            const { data, error } = await supabase
+                .from('long_term_goals')
+                .select('year')
+                .order('year', { ascending: true })
+                .limit(1)
+                .single();
+
+            if (error && error.code !== 'PGRST116') console.error('Error fetching min year:', error);
+            // Default to 2022 if no data or error, or the found year if valid
+            const year = data?.year || 2022;
+            return year;
+        }
+    });
+
+    const startYear = minYearData || 2022;
+
+    // Generate year range: startYear to (Current Year + 5)
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: (currentYear + 5) - 2022 + 1 }, (_, i) => 2022 + i);
+    const years = Array.from({ length: (currentYear + 5) - startYear + 1 }, (_, i) => startYear + i);
 
     return (
         <div className="space-y-6 animate-fade-in p-2 md:p-0">
@@ -369,11 +393,14 @@ export function LongTermGoals() {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
 
                 <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
-                    <Select value={selectedYear.toString()} onValueChange={(val) => setSelectedYear(parseInt(val))}>
-                        <SelectTrigger className="w-[100px]">
+                    <Select value={selectedYear} onValueChange={(val) => setSelectedYear(val)}>
+                        <SelectTrigger className="w-[120px]">
                             <SelectValue placeholder="Anno" />
                         </SelectTrigger>
                         <SelectContent>
+                            <SelectItem value="all" className="font-bold text-primary">
+                                Dal {startYear}
+                            </SelectItem>
                             {years.map(year => (
                                 <SelectItem
                                     key={year}
@@ -400,7 +427,7 @@ export function LongTermGoals() {
                                         key={m.value}
                                         value={m.value.toString()}
                                         className={cn(
-                                            (selectedYear < currentYear || (selectedYear === currentYear && m.value < (new Date().getMonth() + 1))) && "text-muted-foreground italic"
+                                            (selectedYear !== 'all' && parseInt(selectedYear) < currentYear) || (selectedYear === currentYear.toString() && m.value < (new Date().getMonth() + 1)) && "text-muted-foreground italic"
                                         )}
                                     >
                                         {m.label}
@@ -416,13 +443,13 @@ export function LongTermGoals() {
                                 <SelectValue placeholder="Settimana" />
                             </SelectTrigger>
                             <SelectContent>
-                                {Array.from({ length: getWeeksInMonth(new Date(selectedYear, selectedMonth - 1, 1), { weekStartsOn: 1 }) }, (_, i) => i + 1).map(w => (
+                                {Array.from({ length: getWeeksInMonth(new Date(selectedYear === 'all' ? currentYear : parseInt(selectedYear), selectedMonth - 1, 1), { weekStartsOn: 1 }) }, (_, i) => i + 1).map(w => (
                                     <SelectItem
                                         key={w}
                                         value={w.toString()}
                                         // Logic for past weeks is complex without a full date compare, simplifying for now
                                         className={cn(
-                                            (selectedYear < currentYear || (selectedYear === currentYear && selectedMonth < (new Date().getMonth() + 1))) && "text-muted-foreground italic"
+                                            (selectedYear !== 'all' && parseInt(selectedYear) < currentYear) || (selectedYear === currentYear.toString() && selectedMonth < (new Date().getMonth() + 1)) && "text-muted-foreground italic"
                                         )}
                                     >
                                         Settimana {w}
@@ -493,7 +520,7 @@ export function LongTermGoals() {
                                     <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-accent cursor-pointer" onClick={() => setExportScope('year')}>
                                         <RadioGroupItem value="year" id="r2" />
                                         <Label htmlFor="r2" className="cursor-pointer flex-1">
-                                            <div className="font-medium">Solo {selectedYear}</div>
+                                            <div className="font-medium">Solo {selectedYear === 'all' ? currentYear : selectedYear}</div>
                                             <div className="text-xs text-muted-foreground">Solo obiettivi di questo anno e impostazioni</div>
                                         </Label>
                                     </div>
@@ -502,7 +529,7 @@ export function LongTermGoals() {
 
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Annulla</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => exportBackup({ scope: exportScope, year: selectedYear })} disabled={isExporting}>
+                                <AlertDialogAction onClick={() => exportBackup({ scope: exportScope, year: selectedYear === 'all' ? currentYear : parseInt(selectedYear) })} disabled={isExporting}>
                                     {isExporting ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                                     Scarica Backup
                                 </AlertDialogAction>
@@ -531,11 +558,11 @@ export function LongTermGoals() {
             <div className="text-2xl font-bold tracking-tight text-white flex items-center gap-3">
                 {view === 'stats' ? (
                     <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                        Analytics {selectedYear}
+                        Analytics {selectedYear === 'all' ? `Dal ${startYear} al ${currentYear}` : selectedYear}
                     </span>
                 ) : (
                     <>
-                        {view === 'annual' && <span className="text-primary">{selectedYear}</span>}
+                        {view === 'annual' && <span className="text-primary">{selectedYear === 'all' ? 'Tutti gli anni' : selectedYear}</span>}
                         {view === 'monthly' && <span className="text-blue-400">{months.find(m => m.value === selectedMonth)?.label}</span>}
                         {view === 'weekly' && <span className="text-purple-400">Settimana {selectedWeek}</span>}
                         <span className="text-muted-foreground text-lg font-normal">
