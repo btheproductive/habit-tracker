@@ -15,6 +15,7 @@ interface DayDetailsModalProps {
     records: GoalLogsMap;
     onToggleHabit: (habitId: string) => void;
     isPrivacyMode?: boolean;
+    readonly?: boolean;
 }
 
 export function DayDetailsModal({
@@ -24,7 +25,8 @@ export function DayDetailsModal({
     habits,
     records,
     onToggleHabit,
-    isPrivacyMode = false
+    isPrivacyMode = false,
+    readonly = false
 }: DayDetailsModalProps) {
     if (!date) return null;
 
@@ -59,13 +61,15 @@ export function DayDetailsModal({
                                 return (
                                     <div
                                         key={habit.id}
-                                        onClick={() => onToggleHabit(habit.id)}
+                                        onClick={() => !readonly && onToggleHabit(habit.id)}
                                         className={cn(
-                                            "flex items-center justify-between p-3 rounded-xl border transition-all cursor-pointer",
-                                            "hover:shadow-md hover:scale-[1.02] active:scale-[0.98]",
+                                            "flex items-center justify-between p-3 rounded-xl border transition-all",
+                                            !readonly && "cursor-pointer hover:shadow-md hover:scale-[1.02] active:scale-[0.98]",
+                                            readonly && "opacity-90",
                                             isDone && "bg-success/15 border-success/30",
                                             isMissed && "bg-destructive/15 border-destructive/30",
-                                            !status && "bg-card hover:bg-accent border-border"
+                                            !status && "bg-card border-border",
+                                            !status && !readonly && "hover:bg-accent"
                                         )}
                                     >
                                         <div className="flex items-center gap-3">

@@ -110,10 +110,11 @@ export function WeeklyView({ habits, records, onToggleHabit, isPrivacyMode = fal
                                         <button
                                             key={habit.id}
                                             disabled={isFuture}
-                                            onClick={() => onToggleHabit(date, habit.id)}
+                                            onClick={() => setSelectedDate(date)} // Open modal instead of toggling
                                             className={cn(
                                                 "aspect-square rounded-xl border border-white/5 flex items-center justify-center transition-all hover:border-white/20",
                                                 isFuture && "opacity-30 cursor-not-allowed",
+                                                !isFuture && "cursor-pointer hover:bg-white/10", // Indicate clickable
                                                 status === 'done' && "opacity-100 shadow-[0_0_10px_currentColor]",
                                                 status === 'missed' && "opacity-50 grayscale",
                                                 !status && !isFuture && "bg-white/5",
@@ -141,6 +142,7 @@ export function WeeklyView({ habits, records, onToggleHabit, isPrivacyMode = fal
                 records={records}
                 onToggleHabit={(habitId) => selectedDate && onToggleHabit(selectedDate, habitId)}
                 isPrivacyMode={isPrivacyMode}
+                readonly={true}
             />
         </div >
     );

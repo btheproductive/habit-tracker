@@ -3,17 +3,18 @@ import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Goal, GoalLogsMap } from '@/types/goals';
 import { Check, X } from 'lucide-react';
+import { getLocalDateKey } from '@/lib/date-utils';
 
 interface DailyViewProps {
     habits: Goal[];
     records: GoalLogsMap;
     onToggleHabit: (date: Date, habitId: string) => void;
     isPrivacyMode?: boolean;
+    date?: Date;
 }
 
-export function DailyView({ habits, records, onToggleHabit, isPrivacyMode = false }: DailyViewProps) {
-    const today = new Date();
-    const dateKey = format(today, 'yyyy-MM-dd');
+export function DailyView({ habits, records, onToggleHabit, isPrivacyMode = false, date = new Date() }: DailyViewProps) {
+    const dateKey = getLocalDateKey(date);
     const dayRecord = records[dateKey] || {};
 
     // Filter habits valid for today
@@ -27,7 +28,7 @@ export function DailyView({ habits, records, onToggleHabit, isPrivacyMode = fals
         <div className="glass-panel rounded-3xl p-6 animate-scale-in max-w-lg mx-auto w-full">
             <div className="text-center mb-8">
                 <h2 className="text-2xl font-display font-bold">Focus Giornaliero</h2>
-                <p className="text-muted-foreground capitalize">{format(today, 'EEEE d MMMM', { locale: it })}</p>
+                <p className="text-muted-foreground capitalize">{format(date, 'EEEE d MMMM', { locale: it })}</p>
             </div>
 
             <div className="space-y-3">
@@ -42,7 +43,7 @@ export function DailyView({ habits, records, onToggleHabit, isPrivacyMode = fals
                     return (
                         <div
                             key={habit.id}
-                            onClick={() => onToggleHabit(today, habit.id)}
+                            onClick={() => onToggleHabit(date, habit.id)}
                             className={cn(
                                 "group relative overflow-hidden p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all cursor-pointer flex items-center justify-between",
                                 status === 'done' && "border-primary/20 bg-primary/5"

@@ -230,6 +230,7 @@ const Index = () => {
                     records={records}
                     onToggleHabit={toggleGoal}
                     isPrivacyMode={isPrivacyMode}
+                    date={new Date()}
                   />
                 </div>
               </TabsContent>
