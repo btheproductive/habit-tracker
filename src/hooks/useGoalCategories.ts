@@ -11,6 +11,7 @@ export const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
     purple: 'Viola',
     pink: 'Rosa',
     cyan: 'Ciano',
+    green: 'Verde',
 };
 
 export interface GoalCategorySettings {

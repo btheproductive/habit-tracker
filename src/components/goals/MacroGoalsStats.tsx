@@ -6,10 +6,10 @@ import {
     PieChart, Pie, Cell, Legend,
     AreaChart, Area,
     RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
-    ComposedChart, Line
+    ComposedChart, Line, LineChart
 } from 'recharts';
 import { Loader2, Trophy, Target, TrendingUp, CheckCircle2, Zap, Brain, Rocket, Calendar, Activity } from 'lucide-react';
-import { useGoalCategories } from '@/hooks/useGoalCategories';
+import { useGoalCategories, DEFAULT_CATEGORY_LABELS } from '@/hooks/useGoalCategories';
 
 interface MacroGoalsStatsProps {
     year: number | string;
@@ -31,7 +31,7 @@ interface LongTermGoal {
 }
 
 export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
-    const { getLabel } = useGoalCategories();
+    const { getLabel, settings } = useGoalCategories();
     const { data: allGoals, isLoading } = useQuery({
         queryKey: ['longTermGoals', 'stats', year],
         queryFn: async () => {
@@ -116,9 +116,22 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
     const categoryStats: Record<string, { total: number; completed: number }> = {};
     allGoals.forEach(g => {
         const c = g.color || 'null';
-        if (!categoryStats[c]) categoryStats[c] = { total: 0, completed: 0 };
-        categoryStats[c].total++;
-        if (g.is_completed) categoryStats[c].completed++;
+        // Filter: Active if 'null' (Generale) OR if the resolved label is DIFFERENT from the default color name
+        const label = getLabel(c === 'null' ? null : c);
+        // Fallback to 'c' if default label is missing (e.g. for new colors) to prevent them showing as "custom"
+        const defaultLabel = c === 'null' ? 'Generale' : (DEFAULT_CATEGORY_LABELS[c] || c);
+        // If label != defaultLabel, it means the user heavily customized it (or it's 'Generale' which we always show?)
+        // Actually 'Generale' label is 'Generale'. default is 'Generale'. 
+        // Logic: Show if 'null' OR label != defaultLabel
+
+        const isDefault = c !== 'null' && label === defaultLabel;
+        const isActive = c === 'null' || !isDefault;
+
+        if (isActive) {
+            if (!categoryStats[c]) categoryStats[c] = { total: 0, completed: 0 };
+            categoryStats[c].total++;
+            if (g.is_completed) categoryStats[c].completed++;
+        }
     });
 
     const radarData = Object.entries(categoryStats).map(([key, stats]) => ({
@@ -164,6 +177,84 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
         // Insights for All Time
         const bestYear = [...yearlyData].sort((a, b) => b.rate - a.rate || b.completed - a.completed)[0];
         const mostProductiveYear = [...yearlyData].sort((a, b) => b.completed - a.completed)[0];
+
+        // --- SEASONAL DATA (Q1-Q4 Aggregated) ---
+        const seasonalData = [1, 2, 3, 4].map(q => ({
+            name: `Q${q}`,
+            total: 0,
+            completed: 0,
+            rate: 0
+        }));
+
+        allGoals.forEach(g => {
+            const q = g.quarter;
+
+            if (q && q >= 1 && q <= 4) {
+                const idx = q - 1;
+                seasonalData[idx].total++;
+                if (g.is_completed) seasonalData[idx].completed++;
+            }
+        });
+
+        seasonalData.forEach(d => {
+            d.rate = d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0;
+        });
+
+        // --- MONTHLY HISTORICAL DATA (Jan-Dec Aggregated) ---
+        const monthlyHistoricalData = Array.from({ length: 12 }, (_, i) => ({
+            name: new Date(2024, i).toLocaleString('it-IT', { month: 'short' }), // Year doesn't matter for month name
+            monthIndex: i + 1,
+            total: 0,
+            completed: 0,
+            rate: 0
+        }));
+
+        allGoals.forEach(g => {
+            if (g.month && g.month >= 1 && g.month <= 12) {
+                const idx = g.month - 1;
+                monthlyHistoricalData[idx].total++;
+                if (g.is_completed) monthlyHistoricalData[idx].completed++;
+            }
+        });
+
+        monthlyHistoricalData.forEach(d => {
+            d.rate = d.total > 0 ? Math.round((d.completed / d.total) * 100) : 0;
+        });
+
+        // --- CATEGORY EVOLUTION DATA (Stacked Bar by Year) ---
+        const categoryEvolutionData: any[] = [];
+        // Get all unique years sorted
+        const uniqueYears = Array.from(new Set(allGoals.map(g => g.year))).sort((a, b) => a - b);
+
+        uniqueYears.forEach(y => {
+            const yearGoals = allGoals.filter(g => g.year === y);
+            const row: any = { year: y.toString(), total: yearGoals.length };
+
+            // Initialize all colors to 0, but ONLY active ones
+            Object.keys(chartColors).forEach(color => {
+                const label = getLabel(color === 'null' ? null : color);
+                const defaultLabel = color === 'null' ? 'Generale' : (DEFAULT_CATEGORY_LABELS[color] || color);
+                const isDefault = color !== 'null' && label === defaultLabel;
+                const isActive = color === 'null' || !isDefault;
+
+                if (isActive) {
+                    row[color] = 0;
+                }
+            });
+
+            yearGoals.forEach(g => {
+                const c = g.color || 'null';
+                const label = getLabel(c === 'null' ? null : c);
+                const defaultLabel = c === 'null' ? 'Generale' : (DEFAULT_CATEGORY_LABELS[c] || c);
+                const isDefault = c !== 'null' && label === defaultLabel;
+                const isActive = c === 'null' || !isDefault;
+                if (isActive) {
+                    if (row[c] !== undefined) row[c]++;
+                }
+            });
+
+            categoryEvolutionData.push(row);
+        });
 
         return (
             <div className="space-y-8 animate-fade-in pb-10">
@@ -300,6 +391,108 @@ export function MacroGoalsStats({ year }: MacroGoalsStatsProps) {
                                     <Bar dataKey="rate" name="Successo %" fill="#8b5cf6" radius={[0, 4, 4, 0]} barSize={30}>
                                         {/* Label list could be cool */}
                                     </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* 4. Seasonal/Quarterly Performance (New) */}
+                    <Card className="bg-card/40 border-white/5 backdrop-blur-sm">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <Calendar className="w-5 h-5 text-amber-500" />
+                                <CardTitle>Stagionalità (Performance Trimestrale)</CardTitle>
+                            </div>
+                            <CardDescription>Aggregato di tutti gli anni: in quale trimestre rendi meglio?</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[350px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={seasonalData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1f1f1f', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}
+                                        cursor={{ fill: '#ffffff05' }}
+                                    />
+                                    <Bar dataKey="total" name="Totale" fill="#f59e0b" radius={[4, 4, 0, 0]} barSize={30} fillOpacity={0.6} />
+                                    <Bar dataKey="completed" name="Completati" fill="#10b981" radius={[4, 4, 0, 0]} barSize={30} />
+                                </BarChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* 5. Historical Monthly Performance (New) */}
+                    <Card className="bg-card/40 border-white/5 backdrop-blur-sm">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <Activity className="w-5 h-5 text-pink-500" />
+                                <CardTitle>Performance Mensile (Storico)</CardTitle>
+                            </div>
+                            <CardDescription>Successo medio per mese: scopri il tuo ritmo ideale</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[350px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <LineChart data={monthlyHistoricalData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                    <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} unit="%" domain={[0, 100]} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1f1f1f', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}
+                                        cursor={{ stroke: '#ffffff20' }}
+                                    />
+                                    <Line
+                                        type="monotone"
+                                        dataKey="rate"
+                                        name="Tasso di Successo"
+                                        stroke="#ec4899"
+                                        strokeWidth={3}
+                                        dot={{ r: 4, strokeWidth: 2, fill: '#1f1f1f' }}
+                                        activeDot={{ r: 6, fill: '#ec4899' }}
+                                    />
+                                </LineChart>
+                            </ResponsiveContainer>
+                        </CardContent>
+                    </Card>
+
+                    {/* 5. Category Evolution (Stacked Bar) */}
+                    <Card className="md:col-span-2 bg-card/40 border-white/5 backdrop-blur-sm">
+                        <CardHeader>
+                            <div className="flex items-center gap-2">
+                                <TrendingUp className="w-5 h-5 text-indigo-500" />
+                                <CardTitle>Evoluzione Interessi (Categorie)</CardTitle>
+                            </div>
+                            <CardDescription>Come sono cambiati i tuoi focus nel corso degli anni</CardDescription>
+                        </CardHeader>
+                        <CardContent className="h-[400px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={categoryEvolutionData}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                                    <XAxis dataKey="year" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
+                                    <Tooltip
+                                        contentStyle={{ backgroundColor: '#1f1f1f', border: '1px solid #333', color: '#fff', borderRadius: '8px' }}
+                                        cursor={{ fill: '#ffffff05' }}
+                                    />
+                                    <Legend />
+                                    {Object.entries(chartColors).map(([color, hex]) => {
+                                        const label = getLabel(color === 'null' ? null : color);
+                                        const defaultLabel = color === 'null' ? 'Generale' : (DEFAULT_CATEGORY_LABELS[color] || color);
+                                        const isDefault = color !== 'null' && label === defaultLabel;
+                                        const isActive = color === 'null' || !isDefault;
+
+                                        if (!isActive) return null;
+
+                                        return (
+                                            <Bar
+                                                key={color}
+                                                dataKey={color}
+                                                name={label}
+                                                stackId="a"
+                                                fill={hex}
+                                            />
+                                        );
+                                    })}
                                 </BarChart>
                             </ResponsiveContainer>
                         </CardContent>
