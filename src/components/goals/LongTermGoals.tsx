@@ -131,7 +131,7 @@ export function LongTermGoals() {
                 .select('*')
                 .eq('type', view)
                 .order('status', { ascending: true }) // active -> completed -> failed
-                .order('color', { ascending: true, nullsFirst: false }) // Group by color
+                .order('color', { ascending: true }) // Group by color
                 .order('created_at', { ascending: true });
 
             if (selectedYear !== 'all' && view !== 'lifetime') {
