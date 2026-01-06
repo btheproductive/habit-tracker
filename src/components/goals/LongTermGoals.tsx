@@ -420,7 +420,7 @@ export function LongTermGoals() {
                 <div className="flex justify-center w-full">
                     <Tabs value={view} onValueChange={(v) => setView(v as GoalType)} className="w-full max-w-2xl">
                         <TabsList className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 w-full h-auto p-1 bg-secondary/30 backdrop-blur-sm border border-white/5 gap-1">
-                            <TabsTrigger value="lifetime" className="w-full">Lifetime</TabsTrigger>
+                            <TabsTrigger value="lifetime" className="w-full col-span-2 sm:col-span-1">Lifetime</TabsTrigger>
                             <TabsTrigger value="annual" className="w-full">Annuale</TabsTrigger>
                             <TabsTrigger value="quarterly" className="w-full">Trimestrale</TabsTrigger>
                             <TabsTrigger value="monthly" className="w-full">Mensile</TabsTrigger>
