@@ -47,7 +47,9 @@ export interface CriticalHabitStat {
     worstDayRate: number; // Completion rate on that specific day
 }
 
-export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
+export type Timeframe = 'weekly' | 'monthly' | 'annual' | 'all';
+
+export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: Timeframe = 'weekly') {
     return useMemo(() => {
         const today = startOfDay(new Date());
         // Flatten logs to get all active dates for global calculations
@@ -229,36 +231,139 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
             });
         });
 
-        // 3. Trend Data (Last 7 days)
+        // 3. Trend Data
         const trendData: TrendData[] = [];
-        const last7Days = subDays(today, 6);
+        let trendStartStr: Date;
+        let trendEnd: Date = today;
+        let interval: 'day' | 'month' = 'day';
 
-        eachDayOfInterval({ start: last7Days, end: today }).forEach(day => {
-            const key = format(day, 'yyyy-MM-dd');
-            const dataPoint: TrendData = { date: format(day, 'EEE', { locale: it }) };
+        // Determine start date and interval based on timeframe
+        switch (trendTimeframe) {
+            case 'weekly':
+                trendStartStr = subDays(today, 6);
+                interval = 'day';
+                break;
+            case 'monthly':
+                trendStartStr = subDays(today, 29);
+                interval = 'day';
+                break;
+            case 'annual':
+                trendStartStr = subMonths(today, 11); // Last 12 months including current
+                interval = 'month';
+                break;
+            case 'all':
+                // Find earliest start date
+                const earliest = goals.reduce((min, g) => isBefore(new Date(g.start_date), min) ? new Date(g.start_date) : min, today);
+                trendStartStr = earliest;
+                // Auto-scale: if > 90 days, use months, else days
+                if (differenceInCalendarDays(today, earliest) > 90) {
+                    interval = 'month';
+                    // Align start to start of month for cleaner graph
+                    trendStartStr = startOfMonth(trendStartStr);
+                } else {
+                    interval = 'day';
+                }
+                break;
+            default:
+                trendStartStr = subDays(today, 6);
+        }
 
-            let dailyDone = 0;
-            let dailyActive = 0;
-
-            goals.forEach(goal => {
-                const gStart = new Date(goal.start_date);
-                if (isBefore(startOfDay(day), startOfDay(gStart))) {
-                    dataPoint[goal.id] = 0; // Or null?
-                    return;
+        if (interval === 'day') {
+            // Daily Granularity
+            eachDayOfInterval({ start: trendStartStr, end: trendEnd }).forEach(day => {
+                const key = format(day, 'yyyy-MM-dd');
+                // Format label: 'Lun', 'Mar' etc. or '01 Jan' for longer ranges?
+                // For monthly view, 'dd/MM' might be better.
+                let dateLabel = format(day, 'EEE', { locale: it });
+                if (trendTimeframe === 'monthly' || trendTimeframe === 'all') {
+                    dateLabel = format(day, 'dd/MM', { locale: it });
                 }
 
-                dailyActive++;
-                const status = logs[key]?.[goal.id];
-                const isDone = status === 'done';
-                if (isDone) dailyDone++;
+                const dataPoint: TrendData = { date: dateLabel };
 
-                dataPoint[goal.id] = isDone ? 100 : 0;
+                let dailyDone = 0;
+                let dailyActive = 0;
+
+                goals.forEach(goal => {
+                    const gStart = new Date(goal.start_date);
+                    if (isBefore(startOfDay(day), startOfDay(gStart))) {
+                        // Goal not started yet
+                        dataPoint[goal.id] = 0;
+                        return;
+                    }
+
+                    dailyActive++;
+                    const status = logs[key]?.[goal.id];
+                    const isDone = status === 'done';
+                    if (isDone) dailyDone++;
+
+                    dataPoint[goal.id] = isDone ? 100 : 0;
+                });
+
+                const overall = dailyActive > 0 ? Math.round((dailyDone / dailyActive) * 100) : 0;
+                dataPoint['overall'] = overall;
+                trendData.push(dataPoint);
             });
+        } else {
+            // Monthly Granularity
+            // Iterate months
+            const monthsList = eachDayOfInterval({ start: trendStartStr, end: trendEnd })
+                .filter((d, i, arr) => {
+                    // Filter to get roughly 1 per month, purely for iteration relative to 'interval' helper?
+                    // Actually `date-fns` doesn't have `eachMonthOfInterval` in v2 imports above easily without changing imports?
+                    // It does normally. Let's assume we can reuse or just step manually.
+                    // But simpler: just use startOfMonth for distinct checks.
+                    return d.getDate() === 1; // Basic filter if we used day interval, but unsafe if start is mid-month.
+                });
 
-            const overall = dailyActive > 0 ? Math.round((dailyDone / dailyActive) * 100) : 0;
-            dataPoint['overall'] = overall;
-            trendData.push(dataPoint);
-        });
+            // Better: use specific helper or manual loop
+            let currentMonth = startOfMonth(trendStartStr);
+            while (!isAfter(currentMonth, trendEnd)) {
+                const monthEnd = endOfMonth(currentMonth);
+                const actualEnd = isBefore(monthEnd, trendEnd) ? monthEnd : trendEnd;
+
+                const dataPoint: TrendData = {
+                    date: format(currentMonth, 'MMM yy', { locale: it })
+                };
+
+                let monthTotalActive = 0;
+                let monthTotalDone = 0;
+
+                goals.forEach(goal => {
+                    // Calculate rate for this goal in this month
+                    const gStart = new Date(goal.start_date);
+
+                    // Effective start for this month
+                    const effStart = isBefore(currentMonth, gStart) ? gStart : currentMonth;
+
+                    if (isAfter(effStart, actualEnd)) {
+                        dataPoint[goal.id] = 0;
+                        return;
+                    }
+
+                    let gDone = 0;
+                    let gTotal = 0;
+
+                    eachDayOfInterval({ start: effStart, end: actualEnd }).forEach(d => {
+                        const k = format(d, 'yyyy-MM-dd');
+                        gTotal++;
+                        if (logs[k]?.[goal.id] === 'done') gDone++;
+                    });
+
+                    const gRate = gTotal > 0 ? Math.round((gDone / gTotal) * 100) : 0;
+                    dataPoint[goal.id] = gRate;
+
+                    monthTotalActive += gTotal;
+                    monthTotalDone += gDone;
+                });
+
+                const overall = monthTotalActive > 0 ? Math.round((monthTotalDone / monthTotalActive) * 100) : 0;
+                dataPoint['overall'] = overall;
+                trendData.push(dataPoint);
+
+                currentMonth = startOfMonth(subDays(currentMonth, -32)); // Add ~1 month safely to jump to next
+            }
+        }
 
         // 4. Weekday Stats (Day of Week Analysis)
         const weekdayStats = [0, 0, 0, 0, 0, 0, 0].map((_, i) => ({
@@ -377,7 +482,7 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap) {
         // We can't easily inject cleanly without changing return type or using the object created above
         return statsResult;
 
-    }, [goals, logs]);
+    }, [goals, logs, trendTimeframe]);
 }
 
 

@@ -1,5 +1,5 @@
 import { useGoals } from '@/hooks/useGoals';
-import { useHabitStats } from '@/hooks/useHabitStats';
+import { useHabitStats, Timeframe } from '@/hooks/useHabitStats';
 import { StatsOverview } from '@/components/stats/StatsOverview';
 import { ActivityHeatmap } from '@/components/stats/ActivityHeatmap';
 import { TrendChart } from '@/components/stats/TrendChart';
@@ -11,9 +11,13 @@ import { Trophy } from 'lucide-react';
 import { usePrivacy } from '@/context/PrivacyContext';
 import { cn } from '@/lib/utils';
 
+import { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 const Stats = () => {
     const { goals, logs } = useGoals();
-    const stats = useHabitStats(goals, logs);
+    const [trendTimeframe, setTrendTimeframe] = useState<Timeframe>('weekly');
+    const stats = useHabitStats(goals, logs, trendTimeframe);
     const { isPrivacyMode } = usePrivacy();
 
     // Find best habit safely
@@ -66,35 +70,60 @@ const Stats = () => {
                 <CriticalAnalysis criticalHabits={stats.criticalHabits} />
             </div>
 
-            {/* Charts Row 1: Trends & Radar */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="glass-panel rounded-3xl p-6 h-[300px] sm:h-[400px] flex flex-col">
-                    <h3 className="text-lg font-display font-semibold mb-4">Trend Settimanale</h3>
-                    <div className="flex-1 w-full min-h-0">
-                        <TrendChart data={stats.trendData} />
-                    </div>
+            {/* Trends - Full Width */}
+            <div className="glass-panel rounded-3xl p-6 h-[450px] flex flex-col">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <h3 className="text-lg font-display font-semibold">Trend</h3>
+                    <Tabs value={trendTimeframe} onValueChange={(v) => setTrendTimeframe(v as Timeframe)} className="w-full sm:w-auto">
+                        <TabsList className="grid w-full grid-cols-4 sm:w-[400px]">
+                            <TabsTrigger value="weekly">Settimana</TabsTrigger>
+                            <TabsTrigger value="monthly">Mese</TabsTrigger>
+                            <TabsTrigger value="annual">Anno</TabsTrigger>
+                            <TabsTrigger value="all">Tutto</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
-                <div className={cn("glass-panel rounded-3xl p-6 h-[300px] sm:h-[400px] flex flex-col transition-all duration-300", isPrivacyMode && "blur-sm")}>
+                <div className="flex-1 w-full min-h-0">
+                    <TrendChart data={stats.trendData} />
+                </div>
+            </div>
+
+            {/* Radar Chart */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={cn("glass-panel rounded-3xl p-6 h-[400px] flex flex-col transition-all duration-300", isPrivacyMode && "blur-sm")}>
                     <h3 className="text-lg font-display font-semibold mb-4">Focus Abitudini</h3>
                     <div className="flex-1 w-full min-h-0">
                         <HabitRadar stats={stats.habitStats} />
                     </div>
                 </div>
+                {/* Empty slot or move another chart here? For now, we can leave Radar full width or share with something else if available. 
+                    Actually, let's keep Radar alongside DayOfWeekChart or just let it start a new row.
+                    The design requested Trend full width. 
+                    Original Row 1 was Trend + Radar. 
+                    Original Row 2 was Costanza Settimanale (DayOfWeek).
+                    
+                    Let's make:
+                    1. Overview
+                    2. Heatmap (Full)
+                    3. Comparison
+                    4. Trend (Full)
+                    5. Radar + DayOfWeek (Grid 2 cols) -> Efficient use of space
+                */}
+                <div className="glass-panel rounded-3xl p-6 h-[400px] flex flex-col">
+                    <div className="mb-6">
+                        <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-sm bg-primary animate-pulse" />
+                            Costanza Settimanale
+                        </h3>
+                        <p className="text-sm text-muted-foreground">Scopri in quali giorni sei più produttivo.</p>
+                    </div>
+                    <div className="flex-1 w-full min-h-0">
+                        <DayOfWeekChart data={stats.weekdayStats} />
+                    </div>
+                </div>
             </div>
 
-            {/* Charts Row 2: Best Day Analysis */}
-            <div className="glass-panel rounded-3xl p-6">
-                <div className="mb-6">
-                    <h3 className="text-lg font-display font-semibold flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-sm bg-primary animate-pulse" />
-                        Costanza Settimanale
-                    </h3>
-                    <p className="text-sm text-muted-foreground">Scopri in quali giorni sei più produttivo.</p>
-                </div>
-                <div className="h-[250px] w-full">
-                    <DayOfWeekChart data={stats.weekdayStats} />
-                </div>
-            </div>
+
 
             {/* Detailed Table */}
             <div className={cn("glass-panel rounded-3xl p-6 transition-all duration-300", isPrivacyMode && "blur-sm")}>
