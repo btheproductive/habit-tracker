@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Goal, GoalLogsMap } from '@/types/goals';
-import { format, subDays, subWeeks, subMonths, subYears, eachDayOfInterval, differenceInCalendarDays, isBefore, isAfter, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { format, subDays, subWeeks, subMonths, subYears, eachDayOfInterval, differenceInCalendarDays, differenceInCalendarWeeks, isBefore, isAfter, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 export interface HabitStat {
@@ -559,6 +559,19 @@ function calculateCriticalStats(goals: Goal[], logs: GoalLogsMap, today: Date): 
 
         const effectiveStart = isBefore(analysisStart, new Date(goal.start_date)) ? new Date(goal.start_date) : analysisStart;
 
+        // Calculate weeks active for dynamic threshold
+        // We use Math.max(0, ...) to ensure no negative values
+        // +1 to account for the current partial week if needed, but diff is usually enough
+        const weeksActive = Math.max(0, differenceInCalendarWeeks(today, new Date(goal.start_date)));
+
+        // Dynamic Threshold Logic:
+        // < 2 weeks: 2 occurrences (Very new, just show something)
+        // 2-4 weeks: 3 occurrences (Interim)
+        // > 4 weeks: 4 occurrences (Standard statistical significance)
+        let dynamicThreshold = 4;
+        if (weeksActive < 2) dynamicThreshold = 2;
+        else if (weeksActive < 4) dynamicThreshold = 3;
+
         if (!isAfter(effectiveStart, today)) {
             eachDayOfInterval({ start: effectiveStart, end: today }).forEach(day => {
                 const dayIndex = day.getDay();
@@ -578,7 +591,7 @@ function calculateCriticalStats(goals: Goal[], logs: GoalLogsMap, today: Date): 
         let worstDayRate = 101;
 
         weekdayCounts.forEach((stat, index) => {
-            if (stat.total < 4) return; // Ignore days with too few occurrences (less than 4 weeks of data for that day)
+            if (stat.total < dynamicThreshold) return; // Ignore days with too few occurrences based on habit age
 
             const rate = Math.round((stat.done / stat.total) * 100);
             if (rate < worstDayRate) {

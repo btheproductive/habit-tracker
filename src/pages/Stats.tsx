@@ -151,8 +151,8 @@ const Stats = () => {
                                     <div className="grid grid-cols-2 gap-4 sm:flex sm:gap-8 text-sm text-muted-foreground w-full sm:w-auto justify-between sm:justify-end mt-4 sm:mt-0">
                                         {criticalStat && criticalStat.worstDay !== 'N/A' && (
                                             <div className="flex flex-col items-start sm:items-end p-2 sm:p-0 bg-white/5 sm:bg-transparent rounded-lg sm:rounded-none">
-                                                <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5 text-destructive">Worst</span>
-                                                <span className="font-medium text-foreground">{criticalStat.worstDay}</span>
+                                                <span className="text-xs uppercase tracking-wider font-bold mb-0.5 text-destructive/90">Worst</span>
+                                                <span className="font-semibold text-lg text-foreground bg-destructive/10 px-2 rounded-md sm:bg-transparent sm:px-0 sm:text-base">{criticalStat.worstDay}</span>
                                             </div>
                                         )}
                                         <div className="flex flex-col items-start sm:items-end p-2 sm:p-0 bg-white/5 sm:bg-transparent rounded-lg sm:rounded-none">
