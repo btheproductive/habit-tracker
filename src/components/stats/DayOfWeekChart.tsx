@@ -33,7 +33,7 @@ export function DayOfWeekChart({ data }: DayOfWeekChartProps) {
     return (
         <div className="w-full h-full min-h-[200px]">
             <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <BarChart data={data} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                     <XAxis
                         dataKey="dayName"
                         axisLine={false}

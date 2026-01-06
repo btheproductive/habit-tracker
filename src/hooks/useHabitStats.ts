@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Goal, GoalLogsMap } from '@/types/goals';
-import { format, subDays, subWeeks, subMonths, subYears, eachDayOfInterval, differenceInCalendarDays, differenceInCalendarWeeks, isBefore, isAfter, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
+import { format, subDays, subWeeks, subMonths, subYears, eachDayOfInterval, differenceInCalendarDays, isBefore, isAfter, startOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfYear, endOfYear } from 'date-fns';
 import { it } from 'date-fns/locale';
 
 export interface HabitStat {
@@ -123,10 +123,6 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
                     // Skipped or Null (Empty) -> Treat as Rest Day.
                     // Do NOT break streak. Do NOT increment streak.
                     // Just continue searching backwards.
-
-                    // Note: If we are at day 1 (yesterday) and it's empty, 
-                    // and today is empty, isStreakActive remains true (pending),
-                    // so we keep looking back for the last 'done'.
                 }
 
                 if (!isStreakActive) break;
@@ -155,18 +151,12 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
                     } else {
                         // Empty or Skipped -> Continue without resetting, but don't increment
                         // This effectively "bridges" the gap.
-                        // Example: Done (1), Empty, Done (1) -> Streak should be 2.
-                        // Wait, if I want Done, Empty, Done to be Streak 2...
-                        // Then tempStreak should NOT reset. Correct.
-                        // And it doesn't increment. Correct.
-                        // So next time 'done' hits, tempStreak goes 1 -> 2. Correct.
                     }
                 }
                 longestStreak = Math.max(longestStreak, tempStreak);
             }
 
-            // Completion Rate (All time or last 30 days?)
-            // Legacy was "Last 30 days". Let's match that but respect start_date.
+            // Completion Rate (Last 30 days)
             let rateDays = 0;
             let rateDone = 0;
             const last30 = subDays(today, 29);
@@ -188,7 +178,7 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
                 id: goal.id,
                 title: goal.title,
                 color: goal.color,
-                currentStreak, // Simplified for now, might need more robust logic
+                currentStreak, // Simplified for now
                 longestStreak,
                 totalDays: totalDone,
                 completionRate
@@ -206,10 +196,8 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
             let doneGoals = 0;
 
             goals.forEach(g => {
-                // Was the goal active this day?
                 const gStart = new Date(g.start_date);
                 if (isBefore(startOfDay(day), startOfDay(gStart))) return; // Too early
-                // if (g.end_date && isAfter(day, g.end_date)) return; // Too late (future feature)
 
                 possibleGoals++;
                 if (logs[key]?.[g.id] === 'done') doneGoals++;
@@ -248,17 +236,14 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
                 interval = 'day';
                 break;
             case 'annual':
-                trendStartStr = subMonths(today, 11); // Last 12 months including current
+                trendStartStr = subMonths(today, 11);
                 interval = 'month';
                 break;
             case 'all':
-                // Find earliest start date
                 const earliest = goals.reduce((min, g) => isBefore(new Date(g.start_date), min) ? new Date(g.start_date) : min, today);
                 trendStartStr = earliest;
-                // Auto-scale: if > 90 days, use months, else days
                 if (differenceInCalendarDays(today, earliest) > 90) {
                     interval = 'month';
-                    // Align start to start of month for cleaner graph
                     trendStartStr = startOfMonth(trendStartStr);
                 } else {
                     interval = 'day';
@@ -269,25 +254,20 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
         }
 
         if (interval === 'day') {
-            // Daily Granularity
             eachDayOfInterval({ start: trendStartStr, end: trendEnd }).forEach(day => {
                 const key = format(day, 'yyyy-MM-dd');
-                // Format label: 'Lun', 'Mar' etc. or '01 Jan' for longer ranges?
-                // For monthly view, 'dd/MM' might be better.
                 let dateLabel = format(day, 'EEE', { locale: it });
                 if (trendTimeframe === 'monthly' || trendTimeframe === 'all') {
                     dateLabel = format(day, 'dd/MM', { locale: it });
                 }
 
                 const dataPoint: TrendData = { date: dateLabel };
-
                 let dailyDone = 0;
                 let dailyActive = 0;
 
                 goals.forEach(goal => {
                     const gStart = new Date(goal.start_date);
                     if (isBefore(startOfDay(day), startOfDay(gStart))) {
-                        // Goal not started yet
                         dataPoint[goal.id] = 0;
                         return;
                     }
@@ -305,18 +285,6 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
                 trendData.push(dataPoint);
             });
         } else {
-            // Monthly Granularity
-            // Iterate months
-            const monthsList = eachDayOfInterval({ start: trendStartStr, end: trendEnd })
-                .filter((d, i, arr) => {
-                    // Filter to get roughly 1 per month, purely for iteration relative to 'interval' helper?
-                    // Actually `date-fns` doesn't have `eachMonthOfInterval` in v2 imports above easily without changing imports?
-                    // It does normally. Let's assume we can reuse or just step manually.
-                    // But simpler: just use startOfMonth for distinct checks.
-                    return d.getDate() === 1; // Basic filter if we used day interval, but unsafe if start is mid-month.
-                });
-
-            // Better: use specific helper or manual loop
             let currentMonth = startOfMonth(trendStartStr);
             while (!isAfter(currentMonth, trendEnd)) {
                 const monthEnd = endOfMonth(currentMonth);
@@ -330,10 +298,7 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
                 let monthTotalDone = 0;
 
                 goals.forEach(goal => {
-                    // Calculate rate for this goal in this month
                     const gStart = new Date(goal.start_date);
-
-                    // Effective start for this month
                     const effStart = isBefore(currentMonth, gStart) ? gStart : currentMonth;
 
                     if (isAfter(effStart, actualEnd)) {
@@ -361,47 +326,30 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
                 dataPoint['overall'] = overall;
                 trendData.push(dataPoint);
 
-                currentMonth = startOfMonth(subDays(currentMonth, -32)); // Add ~1 month safely to jump to next
+                currentMonth = startOfMonth(subDays(currentMonth, -32));
             }
         }
 
-        // 4. Weekday Stats (Day of Week Analysis)
+        // 4. Weekday Stats
         const weekdayStats = [0, 0, 0, 0, 0, 0, 0].map((_, i) => ({
-            dayIndex: i, // 0 = Sunday, 1 = Monday ... 6 = Saturday (date-fns standard)
-            dayName: format(new Date(2024, 0, 7 + i), 'EEEE', { locale: it }), // Dummy date to get name. 7th Jan 2024 was Sunday
+            dayIndex: i,
+            dayName: format(new Date(2024, 0, 7 + i), 'EEEE', { locale: it }),
             totalActive: 0,
             totalDone: 0,
             rate: 0
         }));
 
-        // Re-iterate logs to populate weekday stats
-        // We need effective denominator: how many times was a goal EXPECTED on a Monday?
-
-        // Strategy: Iterate last 90 days (approx 3 months) to give relevant "recent" stats, not all time.
-        // Or all time? Let's do All Time for robustness if not too heavy.
-
-        // Optimization: We already have goals and logs.
-        // We can just iterate the `allLogDates`? 
-        // No, `allLogDates` only has dates where something happened. We need denominator (misses too).
-
-        // Let's iterate `eachDayOfInterval` from earliest start_date to today.
         const earliestStart = goals.reduce((min, g) => isBefore(new Date(g.start_date), min) ? new Date(g.start_date) : min, today);
-
-        // Limit to last 365 days max for performance if needed, but JS handles thousands easily.
         const analysisStart = isAfter(earliestStart, subDays(today, 365)) ? earliestStart : subDays(today, 365);
 
         if (!isAfter(analysisStart, today)) {
             eachDayOfInterval({ start: analysisStart, end: today }).forEach(day => {
-                const dayIndex = day.getDay(); // 0-6
+                const dayIndex = day.getDay();
                 const key = format(day, 'yyyy-MM-dd');
 
                 goals.forEach(goal => {
-                    // Check range
                     const gStart = new Date(goal.start_date);
                     if (isBefore(day, gStart)) return;
-
-                    // Future: check frequency_days here if we implement specific days (e.g. Mon/Wed only)
-                    // If goal.frequency_days exists and doesn't include dayIndex (1-7 adjustment?), skip.
 
                     weekdayStats[dayIndex].totalActive++;
 
@@ -417,16 +365,13 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
         });
 
         // Global Stats
-        const totalActiveDays = allLogDates.length; // Approximate
+        const totalActiveDays = allLogDates.length;
         const globalSuccessRate = habitStats.length > 0
             ? Math.round(habitStats.reduce((acc, curr) => acc + curr.completionRate, 0) / habitStats.length)
             : 0;
 
         // 6. Calculate Critical Stats
-        // We need detailed weekday stats per habit to find the worst day
-        // We can reuse the loop logic or create a helper. 
-        // Let's create a dedicated helper for critical stats to keep main body clean.
-        const criticalHabits = calculateCriticalStats(goals, logs, today);
+        const criticalHabits = calculateCriticalStats(goals, logs, today, habitStats);
 
         // 5. Calculate Comparisons
         // Week
@@ -464,28 +409,22 @@ export function useHabitStats(goals: Goal[], logs: GoalLogsMap, trendTimeframe: 
             trendData,
             weekdayStats: weekdayStats.sort((a, b) => {
                 // Sort to start Monday (1) -> Sunday (0)
-                // Monday is 1, Sunday is 0.
-                // We want 1, 2, 3, 4, 5, 6, 0
                 if (a.dayIndex === 0) return 1;
                 if (b.dayIndex === 0) return -1;
                 return a.dayIndex - b.dayIndex;
             }),
-            totalActiveDays, // This might need better definition
+            totalActiveDays,
             globalSuccessRate,
             bestStreak: Math.max(...habitStats.map(h => h.longestStreak), 0),
             worstDay: weekdayStats.reduce((min, curr) => curr.rate < min.rate && curr.totalActive > 0 ? curr : min, weekdayStats[0]).dayName,
             comparisons: comparisons,
-            criticalHabits: criticalHabits.sort((a, b) => a.completionRate - b.completionRate) // Sort by lowest rate first
+            criticalHabits: criticalHabits.sort((a, b) => a.completionRate - b.completionRate)
         };
 
-        // Inject into return object
-        // We can't easily inject cleanly without changing return type or using the object created above
         return statsResult;
 
     }, [goals, logs, trendTimeframe]);
 }
-
-
 
 function calculatePeriodStats(
     goals: Goal[],
@@ -504,7 +443,6 @@ function calculatePeriodStats(
         // Effective start for this period: max(periodStart, goalStart)
         const effectiveStart = isBefore(start, goalStart) ? goalStart : start;
 
-        // If effective start is after end, the goal wasn't active yet -> return 0 (or null?)
         if (isAfter(effectiveStart, end)) return 0;
 
         let totalDays = 0;
@@ -544,33 +482,26 @@ function calculatePeriodStats(
     return result;
 }
 
-function calculateCriticalStats(goals: Goal[], logs: GoalLogsMap, today: Date): CriticalHabitStat[] {
+function calculateCriticalStats(goals: Goal[], logs: GoalLogsMap, today: Date, habitStats: HabitStat[]): CriticalHabitStat[] {
     const criticalStats: CriticalHabitStat[] = [];
-
-    // Analyze over past X days (e.g. 90 days) for meaningful data
     const analysisStart = subDays(today, 90);
 
     goals.forEach(goal => {
-        // Init weekday counters
         const weekdayCounts = [0, 0, 0, 0, 0, 0, 0].map(() => ({ total: 0, done: 0 }));
-
-        let overallDone = 0;
-        let overallTotal = 0;
-
         const effectiveStart = isBefore(analysisStart, new Date(goal.start_date)) ? new Date(goal.start_date) : analysisStart;
 
-        // Calculate weeks active for dynamic threshold
-        // We use Math.max(0, ...) to ensure no negative values
-        // +1 to account for the current partial week if needed, but diff is usually enough
-        const weeksActive = Math.max(0, differenceInCalendarWeeks(today, new Date(goal.start_date)));
+        // Calculate days active for dynamic threshold
+        const daysActive = Math.max(0, differenceInCalendarDays(today, new Date(goal.start_date))) + 1;
 
         // Dynamic Threshold Logic:
-        // < 2 weeks: 2 occurrences (Very new, just show something)
-        // 2-4 weeks: 3 occurrences (Interim)
-        // > 4 weeks: 4 occurrences (Standard statistical significance)
+        // < 8 days: 1 occurrence (Immediate feedback)
+        // 8 - 14 days: 2 occurrences
+        // 15 - 28 days: 3 occurrences
+        // > 28 days: 4 occurrences
         let dynamicThreshold = 4;
-        if (weeksActive < 2) dynamicThreshold = 2;
-        else if (weeksActive < 4) dynamicThreshold = 3;
+        if (daysActive < 8) dynamicThreshold = 1;
+        else if (daysActive < 15) dynamicThreshold = 2;
+        else if (daysActive < 29) dynamicThreshold = 3;
 
         if (!isAfter(effectiveStart, today)) {
             eachDayOfInterval({ start: effectiveStart, end: today }).forEach(day => {
@@ -580,9 +511,7 @@ function calculateCriticalStats(goals: Goal[], logs: GoalLogsMap, today: Date): 
                 weekdayCounts[dayIndex].total++;
                 if (logs[key]?.[goal.id] === 'done') {
                     weekdayCounts[dayIndex].done++;
-                    overallDone++;
                 }
-                overallTotal++;
             });
         }
 
@@ -591,23 +520,22 @@ function calculateCriticalStats(goals: Goal[], logs: GoalLogsMap, today: Date): 
         let worstDayRate = 101;
 
         weekdayCounts.forEach((stat, index) => {
-            if (stat.total < dynamicThreshold) return; // Ignore days with too few occurrences based on habit age
+            if (stat.total < dynamicThreshold) return;
 
             const rate = Math.round((stat.done / stat.total) * 100);
             if (rate < worstDayRate) {
                 worstDayRate = rate;
-                // Get day name
                 const date = new Date(2024, 0, 7 + index); // Sunday 7th Jan 2024
                 worstDay = format(date, 'EEEE', { locale: it });
             }
         });
 
-        // Use 'Overall' rate or 100 if no data
-        const completionRate = overallTotal > 0 ? Math.round((overallDone / overallTotal) * 100) : 0;
+        const mainStat = habitStats.find(h => h.id === goal.id);
+        const completionRate = mainStat ? mainStat.completionRate : 0;
 
         if (worstDayRate === 101) {
-            worstDay = 'N/A'; // No sufficient data
-            worstDayRate = completionRate; // Default to average
+            worstDay = 'N/A';
+            worstDayRate = completionRate;
         }
 
         criticalStats.push({
