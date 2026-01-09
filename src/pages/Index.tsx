@@ -98,15 +98,15 @@ const Index = () => {
   const [view, setView] = useState("month");
 
   return (
-    <div className="flex-1 min-h-dvh flex flex-col pt-8 px-4 sm:px-8 animate-fade-in relative z-10 w-full max-w-[2400px] mx-auto">
+    <div className="flex-1 h-dvh lg:min-h-dvh lg:h-auto overflow-hidden lg:overflow-visible flex flex-col pt-8 pb-4 px-4 sm:px-8 animate-fade-in relative z-10 w-full max-w-[2400px] mx-auto">
 
       {/* Background Glow */}
       <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-2 lg:gap-8 w-full h-full lg:h-auto">
 
         {/* SIDEBAR / COMMAND CENTER (Cols 1-3) */}
-        <div className="lg:col-span-3 space-y-4 lg:space-y-8">
+        <div className="lg:col-span-3 space-y-2 lg:space-y-8">
           {/* Header */}
           <div className="glass-panel p-4 lg:p-6 rounded-2xl space-y-4 lg:sticky lg:top-24 transition-all">
             <div className="flex flex-row lg:flex-col items-center lg:items-start justify-between gap-4">
@@ -234,7 +234,7 @@ const Index = () => {
           </div>
 
           {/* Mini Stats / Quote */}
-          <div className="glass-card p-6 rounded-2xl hidden lg:block transition-colors duration-300">
+          <div className="glass-card p-6 rounded-2xl transition-colors duration-300">
             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 flex items-center justify-between">
               System Status
               {status === 'active' && <Wifi className="w-4 h-4 text-green-500" />}
@@ -268,7 +268,7 @@ const Index = () => {
         </div>
 
         {/* MAIN STAGE (Cols 4-12) */}
-        <div className="lg:col-span-9 flex flex-col min-h-[55dvh]">
+        <div className="lg:col-span-9 flex flex-col flex-1 h-full min-h-0 overflow-hidden lg:overflow-visible">
 
           <Tabs defaultValue="month" value={view} onValueChange={setView} className="w-full h-full flex flex-col">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 lg:mb-4 shrink-0">
