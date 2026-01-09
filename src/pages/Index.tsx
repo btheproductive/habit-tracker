@@ -234,7 +234,7 @@ const Index = () => {
           </div>
 
           {/* Mini Stats / Quote */}
-          <div className="glass-card p-6 rounded-2xl transition-colors duration-300">
+          <div className="glass-card p-6 rounded-2xl hidden lg:block transition-colors duration-300">
             <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-widest mb-2 flex items-center justify-between">
               System Status
               {status === 'active' && <Wifi className="w-4 h-4 text-green-500" />}

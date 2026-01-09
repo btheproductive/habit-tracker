@@ -21,4 +21,4 @@
   - **Layout**: Optimized sidebar alignment, restored natural flow, and tightened bottom spacing.
   - **Tabs**: Fixed visual alignment of tab triggers and selection highlight.
   - **Weekly View**: Aligned layout behavior with monthly view, implementing dynamic vertical stretching for habit blocks.
-  - **Mobile Layout**: Implemented "Native App Shell" lock and switched to a robust `Flexbox` architecture for mobile (preserving `Grid` for desktop). This structural change ensures mathematically precise, equidistant spacing (`gap-2` / `space-y-2`) between all interface blocks, eliminating unwanted visual gaps.
+  - **Mobile Layout**: Implemented "Native App Shell" lock and `Flexbox` architecture. Finalized mobile view by hiding "System Status" and maintaining precise 8px spacing between the Protocollo header and the Calendar.
