@@ -63,7 +63,7 @@ export function HabitCalendar({ habits, records, onToggleHabit, isPrivacyMode = 
 
         // Empty cells
         for (let i = 0; i < startDay; i++) {
-            days.push(<div key={`empty-${i}`} className="aspect-square lg:aspect-auto lg:h-full" />);
+            days.push(<div key={`empty-${i}`} className="aspect-auto h-full" />);
         }
 
         // Days
@@ -111,7 +111,7 @@ export function HabitCalendar({ habits, records, onToggleHabit, isPrivacyMode = 
                     disabled={future}
                     style={style}
                     className={cn(
-                        "aspect-square lg:aspect-auto lg:h-full rounded-xl flex flex-col items-center justify-start py-[clamp(4px,1vw,8px)] transition-all duration-300 relative border border-white/5 hover:border-white/20 hover:bg-white/5 group",
+                        "aspect-auto h-full rounded-xl flex flex-col items-center justify-start py-[clamp(4px,1vw,8px)] transition-all duration-300 relative border border-white/5 hover:border-white/20 hover:bg-white/5 group",
                         future && "opacity-30 cursor-not-allowed",
                         isToday(day) && !hasActivity && "bg-white/5 ring-1 ring-primary/50",
                         // Visual cue for editable days (Today or Yesterday < 12h)
@@ -186,9 +186,9 @@ export function HabitCalendar({ habits, records, onToggleHabit, isPrivacyMode = 
                 <div
                     className={cn(
                         "grid grid-cols-7 gap-[clamp(4px,1.5vw,12px)]",
-                        "lg:flex-1 lg:h-full lg:overflow-hidden",
-                        numRows === 6 ? "lg:grid-rows-6" :
-                            numRows === 5 ? "lg:grid-rows-5" : "lg:grid-rows-4"
+                        "flex-1 h-full overflow-hidden",
+                        numRows === 6 ? "grid-rows-6" :
+                            numRows === 5 ? "grid-rows-5" : "grid-rows-4"
                     )}
                 >
                     {renderDays()}

@@ -21,3 +21,4 @@
   - **Layout**: Optimized sidebar alignment, restored natural flow, and tightened bottom spacing.
   - **Tabs**: Fixed visual alignment of tab triggers and selection highlight.
   - **Weekly View**: Aligned layout behavior with monthly view, implementing dynamic vertical stretching for habit blocks.
+  - **Mobile Layout**: Enforced minimum height (`55dvh`) on calendar container to ensure proper vertical expansion and prevent squashing on small screens.
