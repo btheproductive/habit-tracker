@@ -288,7 +288,7 @@ const Index = () => {
               </TabsList>
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0 glass-panel rounded-xl sm:rounded-2xl p-0 sm:p-2 overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0 glass-panel rounded-xl sm:rounded-2xl p-0 sm:p-2 overflow-hidden mb-2">
               <TabsContent value="month" className="mt-0 animate-scale-in h-full">
                 <HabitCalendar
                   habits={goals}

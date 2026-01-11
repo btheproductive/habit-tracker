@@ -30,7 +30,7 @@ export function Layout() {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 min-h-0 overflow-hidden lg:overflow-visible pb-20 lg:pb-0">
+      <main className="flex-1 min-h-0 overflow-hidden lg:overflow-visible pb-28 lg:pb-0">
         <Outlet />
       </main>
 
