@@ -72,3 +72,10 @@
   - **Calendario**: Heatmap annuale colorata (verde=done, rosso=missed)
   - **Performance**: Grafico per giorno della settimana + worst day analysis
   - **Miglioramento**: Serie negative, streak interrotti, suggerimenti personalizzati
+
+## 2026-01-11 - Full Screen Layout Fix
+
+- **Problem**: Lower part of the screen was not being utilized on the main dashboard, leaving empty space.
+- **Root Cause**: The main grid container in `Index.tsx` had `lg:h-auto`, preventing it from expanding to fill the available height.
+- **Fix Applied**: Changed container class to `lg:h-full` to ensure it takes up all available vertical space alongside `min-h-dvh` in the layout.
+- **File Modified**: `src/pages/Index.tsx`

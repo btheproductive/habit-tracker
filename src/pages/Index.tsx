@@ -105,7 +105,7 @@ const Index = () => {
       {/* Background Glow */}
       <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
-      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-2 lg:gap-8 w-full h-full lg:h-auto">
+      <div className="flex flex-col lg:grid lg:grid-cols-12 gap-2 lg:gap-8 w-full h-full lg:h-full">
 
         {/* SIDEBAR / COMMAND CENTER (Cols 1-3) */}
         <div className="lg:col-span-3 space-y-2 lg:space-y-8">
