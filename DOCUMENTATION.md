@@ -40,3 +40,13 @@
 
 - **Dettagli Abitudini**: Ora ordinato per "Rate" (Performance globale) in ordine decrescente.
 - **Layout Redesign**: Implementata struttura a 4 tabs (Panoramica, Trend, Analisi, Abitudini) per ridurre lo scroll e migliorare la navigabilità.
+
+## 2026-01-11 - Goal-Specific Stats Filter
+
+- **Goal Selector**: Aggiunto dropdown per selezionare goal specifico o "Tutti"
+- **Vista Globale**: Mantiene le 4 tabs originali per statistiche aggregate
+- **Vista Goal Singolo**: 4 nuove tabs dedicate:
+  - **Overview**: KPI (streak, record, rate, mancati) + trend 30 giorni
+  - **Calendario**: Heatmap annuale colorata (verde=done, rosso=missed)
+  - **Performance**: Grafico per giorno della settimana + worst day analysis
+  - **Miglioramento**: Serie negative, streak interrotti, suggerimenti personalizzati
