@@ -13,7 +13,7 @@ import { usePrivacy } from '@/context/PrivacyContext';
 import { cn } from '@/lib/utils';
 
 import { useState } from 'react';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 
 const Stats = () => {
     const { goals, logs } = useGoals();
@@ -27,161 +27,150 @@ const Stats = () => {
         : null;
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-5xl space-y-8 animate-fade-in pb-24">
+        <div className="container mx-auto px-4 py-6 max-w-5xl animate-fade-in pb-24 space-y-6">
             {/* Background Glow */}
             <div className="fixed top-20 left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
 
-            <div className={cn("space-y-2 transition-all duration-300", isPrivacyMode && "blur-sm")}>
-                <h1 className="text-3xl sm:text-4xl font-display font-bold text-foreground">Le tue Statistiche</h1>
-                <p className="text-muted-foreground font-light text-lg">Analisi dettagliata delle tue performance.</p>
+            <div className={cn("space-y-1 mb-4 shrink-0", isPrivacyMode && "blur-sm")}>
+                <h1 className="text-2xl sm:text-3xl font-display font-bold text-foreground">Le tue Statistiche</h1>
+                <p className="text-muted-foreground font-light text-sm sm:text-base">Analisi dettagliata delle tue performance.</p>
             </div>
 
-            {/* Overview Cards */}
-            {/* Overview Cards */}
-            <div className={cn("transition-all duration-300", isPrivacyMode && "blur-sm")}>
-                <StatsOverview
-                    globalStats={{
-                        totalActiveDays: stats.totalActiveDays,
-                        globalSuccessRate: stats.globalSuccessRate,
-                        bestStreak: stats.bestStreak,
-                        worstDay: stats.worstDay,
-                    }}
-                    bestHabit={bestHabit || undefined}
-                />
-            </div>
+            <Tabs defaultValue="panoramica" className="w-full">
+                <TabsList className="grid w-full grid-cols-4 mb-4 shrink-0">
+                    <TabsTrigger value="panoramica" className="text-xs sm:text-sm">Panoramica</TabsTrigger>
+                    <TabsTrigger value="trend" className="text-xs sm:text-sm">Trend</TabsTrigger>
+                    <TabsTrigger value="analisi" className="text-xs sm:text-sm">Analisi</TabsTrigger>
+                    <TabsTrigger value="abitudini" className="text-xs sm:text-sm">Abitudini</TabsTrigger>
+                </TabsList>
 
-            {/* Mood & Energy Correlation - High Visibility */}
-            <div className={cn("transition-all duration-300", isPrivacyMode && "blur-sm")}>
-                <MoodCorrelationChart />
-            </div>
-
-            {/* Heatmap - Full Width */}
-            <div className="glass-panel rounded-3xl p-6">
-                <h3 className="text-lg font-display font-semibold mb-6 flex items-center gap-2">
-                    <span className="w-2 h-2 rounded-sm bg-primary animate-pulse" />
-                    Attività Recente
-                </h3>
-                <ActivityHeatmap data={stats.heatmapData} />
-            </div>
-
-            {/* Period Comparison */}
-            {/* Period Comparison */}
-            <div className={cn("transition-all duration-300", isPrivacyMode && "blur-sm")}>
-                <PeriodComparison comparisons={stats.comparisons} goals={goals} />
-            </div>
-
-            {/* Critical Analysis */}
-            {/* Critical Analysis */}
-            <div className={cn("transition-all duration-300", isPrivacyMode && "blur-sm")}>
-                <CriticalAnalysis criticalHabits={stats.criticalHabits} />
-            </div>
-
-            {/* Trends - Full Width */}
-            <div className="glass-panel rounded-3xl p-6 h-[450px] flex flex-col">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-                    <h3 className="text-lg font-display font-semibold">Trend</h3>
-                    <Tabs value={trendTimeframe} onValueChange={(v) => setTrendTimeframe(v as Timeframe)} className="w-full sm:w-auto">
-                        <TabsList className="grid w-full grid-cols-4 sm:w-[400px]">
-                            <TabsTrigger value="weekly">Settimana</TabsTrigger>
-                            <TabsTrigger value="monthly">Mese</TabsTrigger>
-                            <TabsTrigger value="annual">Anno</TabsTrigger>
-                            <TabsTrigger value="all">Tutto</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-                </div>
-                <div className="flex-1 w-full min-h-0">
-                    <TrendChart data={stats.trendData} />
-                </div>
-            </div>
-
-            {/* Radar Chart */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className={cn("glass-panel rounded-3xl p-6 h-[400px] flex flex-col transition-all duration-300", isPrivacyMode && "blur-sm")}>
-                    <h3 className="text-lg font-display font-semibold mb-4">Focus Abitudini</h3>
-                    <div className="flex-1 w-full min-h-0">
-                        <HabitRadar stats={stats.habitStats} />
+                {/* Tab 1: Panoramica */}
+                <TabsContent value="panoramica" className="mt-0 space-y-6">
+                    <div className={cn("transition-all duration-300", isPrivacyMode && "blur-sm")}>
+                        <StatsOverview
+                            globalStats={{
+                                totalActiveDays: stats.totalActiveDays,
+                                globalSuccessRate: stats.globalSuccessRate,
+                                bestStreak: stats.bestStreak,
+                                worstDay: stats.worstDay,
+                            }}
+                            bestHabit={bestHabit || undefined}
+                        />
                     </div>
-                </div>
-                {/* Empty slot or move another chart here? For now, we can leave Radar full width or share with something else if available. 
-                    Actually, let's keep Radar alongside DayOfWeekChart or just let it start a new row.
-                    The design requested Trend full width. 
-                    Original Row 1 was Trend + Radar. 
-                    Original Row 2 was Costanza Settimanale (DayOfWeek).
-                    
-                    Let's make:
-                    1. Overview
-                    2. Heatmap (Full)
-                    3. Comparison
-                    4. Trend (Full)
-                    5. Radar + DayOfWeek (Grid 2 cols) -> Efficient use of space
-                */}
-                <div className="glass-panel rounded-3xl p-6 h-[400px] flex flex-col">
-                    <div className="mb-6">
-                        <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+
+                    <div className={cn("transition-all duration-300", isPrivacyMode && "blur-sm")}>
+                        <MoodCorrelationChart />
+                    </div>
+
+                    <div className="glass-panel rounded-3xl p-4 sm:p-6">
+                        <h3 className="text-base sm:text-lg font-display font-semibold mb-4 flex items-center gap-2">
                             <span className="w-2 h-2 rounded-sm bg-primary animate-pulse" />
-                            Costanza Settimanale
+                            Attività Recente
                         </h3>
-                        <p className="text-sm text-muted-foreground">Scopri in quali giorni sei più produttivo.</p>
+                        <ActivityHeatmap data={stats.heatmapData} />
                     </div>
-                    <div className="flex-1 w-full min-h-0">
-                        <DayOfWeekChart data={stats.weekdayStats} />
+                </TabsContent>
+
+                {/* Tab 2: Trend */}
+                <TabsContent value="trend" className="mt-0 space-y-6">
+                    <div className="glass-panel rounded-3xl p-4 sm:p-6 h-[350px] sm:h-[400px] flex flex-col">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                            <h3 className="text-base sm:text-lg font-display font-semibold">Trend</h3>
+                            <Tabs value={trendTimeframe} onValueChange={(v) => setTrendTimeframe(v as Timeframe)} className="w-full sm:w-auto">
+                                <TabsList className="grid w-full grid-cols-4 sm:w-[300px]">
+                                    <TabsTrigger value="weekly" className="text-xs">Sett</TabsTrigger>
+                                    <TabsTrigger value="monthly" className="text-xs">Mese</TabsTrigger>
+                                    <TabsTrigger value="annual" className="text-xs">Anno</TabsTrigger>
+                                    <TabsTrigger value="all" className="text-xs">Tutto</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        </div>
+                        <div className="flex-1 w-full min-h-0">
+                            <TrendChart data={stats.trendData} />
+                        </div>
                     </div>
-                </div>
-            </div>
 
+                    <div className={cn("transition-all duration-300", isPrivacyMode && "blur-sm")}>
+                        <PeriodComparison comparisons={stats.comparisons} goals={goals} />
+                    </div>
+                </TabsContent>
 
+                {/* Tab 3: Analisi */}
+                <TabsContent value="analisi" className="mt-0 space-y-6">
+                    <div className={cn("transition-all duration-300", isPrivacyMode && "blur-sm")}>
+                        <CriticalAnalysis criticalHabits={stats.criticalHabits} />
+                    </div>
 
-            {/* Detailed Table */}
-            <div className={cn("glass-panel rounded-3xl p-6 transition-all duration-300", isPrivacyMode && "blur-sm")}>
-                <h3 className="text-lg font-display font-semibold mb-6">Dettagli Abitudini</h3>
-                <div className="space-y-3">
-                    {stats.habitStats.length === 0 ? (
-                        <p className="text-muted-foreground text-center py-8">Nessuna abitudine tracciata ancora.</p>
-                    ) : (
-                        [...stats.habitStats].sort((a, b) => b.completionRate - a.completionRate).map(habit => {
-                            const criticalStat = stats.criticalHabits.find(c => c.habitId === habit.id);
-                            return (
-                                <div key={habit.id} className="glass-card rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 group">
-                                    <div className="flex items-center gap-4 w-full sm:w-auto">
-                                        <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-xl group-hover:scale-110 transition-transform duration-300 shadow-lg shrink-0" style={{ color: habit.color, borderColor: `${habit.color}40`, boxShadow: `0 0 20px ${habit.color}10` }}>
-                                            <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: habit.color }} />
-                                        </div>
-                                        <div className="min-w-0">
-                                            <span className="font-semibold text-foreground text-lg truncate block">{habit.title}</span>
-                                            <div className="h-1 w-20 bg-secondary rounded-full mt-1 overflow-hidden">
-                                                <div className="h-full bg-primary transition-all duration-500" style={{ width: `${habit.completionRate}%`, backgroundColor: habit.color }} />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                        <div className={cn("glass-panel rounded-3xl p-4 sm:p-6 h-[300px] sm:h-[350px] flex flex-col transition-all duration-300", isPrivacyMode && "blur-sm")}>
+                            <h3 className="text-base sm:text-lg font-display font-semibold mb-3">Focus Abitudini</h3>
+                            <div className="flex-1 w-full min-h-0">
+                                <HabitRadar stats={stats.habitStats} />
+                            </div>
+                        </div>
+                        <div className="glass-panel rounded-3xl p-4 sm:p-6 h-[300px] sm:h-[350px] flex flex-col">
+                            <div className="mb-3">
+                                <h3 className="text-base sm:text-lg font-display font-semibold flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-sm bg-primary animate-pulse" />
+                                    Costanza Settimanale
+                                </h3>
+                                <p className="text-xs sm:text-sm text-muted-foreground">Scopri in quali giorni sei più produttivo.</p>
+                            </div>
+                            <div className="flex-1 w-full min-h-0">
+                                <DayOfWeekChart data={stats.weekdayStats} />
+                            </div>
+                        </div>
+                    </div>
+                </TabsContent>
+
+                {/* Tab 4: Abitudini */}
+                <TabsContent value="abitudini" className="mt-0">
+                    <div className={cn("glass-panel rounded-3xl p-4 sm:p-6 transition-all duration-300", isPrivacyMode && "blur-sm")}>
+                        <h3 className="text-base sm:text-lg font-display font-semibold mb-4 sm:mb-6">Dettagli Abitudini</h3>
+                        <div className="space-y-3">
+                            {stats.habitStats.length === 0 ? (
+                                <p className="text-muted-foreground text-center py-8">Nessuna abitudine tracciata ancora.</p>
+                            ) : (
+                                [...stats.habitStats].sort((a, b) => b.completionRate - a.completionRate).map(habit => {
+                                    const criticalStat = stats.criticalHabits.find(c => c.habitId === habit.id);
+                                    return (
+                                        <div key={habit.id} className="glass-card rounded-xl p-3 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 group">
+                                            <div className="flex items-center gap-3 sm:gap-4 w-full sm:w-auto">
+                                                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center bg-white/5 border border-white/10 text-xl group-hover:scale-110 transition-transform duration-300 shadow-lg shrink-0" style={{ color: habit.color, borderColor: `${habit.color}40`, boxShadow: `0 0 20px ${habit.color}10` }}>
+                                                    <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-sm" style={{ backgroundColor: habit.color }} />
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <span className="font-semibold text-foreground text-base sm:text-lg truncate block">{habit.title}</span>
+                                                    <div className="h-1 w-16 sm:w-20 bg-secondary rounded-full mt-1 overflow-hidden">
+                                                        <div className="h-full bg-primary transition-all duration-500" style={{ width: `${habit.completionRate}%`, backgroundColor: habit.color }} />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-3 gap-3 sm:flex sm:gap-6 text-sm text-muted-foreground w-full sm:w-auto justify-between sm:justify-end">
+                                                <div className="flex flex-col items-center sm:items-end">
+                                                    <span className="text-[9px] sm:text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5 flex items-center gap-1">
+                                                        <Trophy className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-yellow-500" /> Best
+                                                    </span>
+                                                    <span className="font-mono text-base sm:text-lg font-bold text-foreground">{habit.longestStreak}<span className="text-[10px] sm:text-xs font-sans font-normal opacity-50">gg</span></span>
+                                                </div>
+                                                <div className="flex flex-col items-center sm:items-end">
+                                                    <span className="text-[9px] sm:text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Serie</span>
+                                                    <span className="font-mono text-base sm:text-lg font-bold text-foreground">{habit.currentStreak}<span className="text-[10px] sm:text-xs font-sans font-normal opacity-50">gg</span></span>
+                                                </div>
+                                                <div className="flex flex-col items-center sm:items-end">
+                                                    <span className="text-[9px] sm:text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Rate</span>
+                                                    <span className="font-mono text-base sm:text-lg font-bold text-foreground">{habit.completionRate}<span className="text-[10px] sm:text-sm">%</span></span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-4 sm:flex sm:gap-8 text-sm text-muted-foreground w-full sm:w-auto justify-between sm:justify-end mt-4 sm:mt-0">
-                                        {criticalStat && criticalStat.worstDay !== 'N/A' && (
-                                            <div className="flex flex-col items-start sm:items-end p-2 sm:p-0 bg-white/5 sm:bg-transparent rounded-lg sm:rounded-none">
-                                                <span className="text-xs uppercase tracking-wider font-bold mb-0.5 text-destructive/90">Worst</span>
-                                                <span className="font-semibold text-lg text-foreground bg-destructive/10 px-2 rounded-md sm:bg-transparent sm:px-0 sm:text-base">{criticalStat.worstDay}</span>
-                                            </div>
-                                        )}
-                                        <div className="flex flex-col items-start sm:items-end p-2 sm:p-0 bg-white/5 sm:bg-transparent rounded-lg sm:rounded-none">
-                                            <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5 flex items-center gap-1">
-                                                <Trophy className="w-3 h-3 text-yellow-500" /> Best
-                                            </span>
-                                            <span className="font-mono text-xl font-bold text-foreground">{habit.longestStreak} <span className="text-xs font-sans font-normal opacity-50">gg</span></span>
-                                        </div>
-                                        <div className="flex flex-col items-start sm:items-end p-2 sm:p-0 bg-white/5 sm:bg-transparent rounded-lg sm:rounded-none">
-                                            <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Serie</span>
-                                            <span className="font-mono text-xl font-bold text-foreground">{habit.currentStreak} <span className="text-xs font-sans font-normal opacity-50">gg</span></span>
-                                        </div>
-                                        <div className="flex flex-col items-start sm:items-end p-2 sm:p-0 bg-white/5 sm:bg-transparent rounded-lg sm:rounded-none">
-                                            <span className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-0.5">Rate</span>
-                                            <span className="font-mono text-xl font-bold text-foreground">{habit.completionRate}<span className="text-sm">%</span></span>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })
-                    )}
-                </div>
-            </div>
+                                    );
+                                })
+                            )}
+                        </div>
+                    </div>
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

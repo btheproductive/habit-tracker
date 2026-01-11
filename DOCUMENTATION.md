@@ -39,3 +39,4 @@
 ## 2026-01-11 - Stats Page Sorting
 
 - **Dettagli Abitudini**: Ora ordinato per "Rate" (Performance globale) in ordine decrescente.
+- **Layout Redesign**: Implementata struttura a 4 tabs (Panoramica, Trend, Analisi, Abitudini) per ridurre lo scroll e migliorare la navigabilità.
