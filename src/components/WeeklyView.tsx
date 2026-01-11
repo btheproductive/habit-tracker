@@ -49,7 +49,7 @@ export function WeeklyView({ habits, records, onToggleHabit, isPrivacyMode = fal
 
     return (
         <div className="w-full h-full p-2 sm:p-4 animate-scale-in flex flex-col">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-2 sm:mb-6">
                 <h2 className="text-xl font-display font-bold capitalize">
                     {dateRangeTitle}
                 </h2>

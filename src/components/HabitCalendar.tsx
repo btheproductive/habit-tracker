@@ -111,7 +111,7 @@ export function HabitCalendar({ habits, records, onToggleHabit, isPrivacyMode = 
                     disabled={future}
                     style={style}
                     className={cn(
-                        "aspect-auto h-full rounded-xl flex flex-col items-center justify-start py-[clamp(4px,1vw,8px)] transition-all duration-300 relative border border-white/5 hover:border-white/20 hover:bg-white/5 group",
+                        "aspect-square w-full rounded-xl flex flex-col items-center justify-start py-[clamp(4px,1vw,8px)] transition-all duration-300 relative border border-white/5 hover:border-white/20 hover:bg-white/5 group",
                         future && "opacity-30 cursor-not-allowed",
                         isToday(day) && !hasActivity && "bg-white/5 ring-1 ring-primary/50",
                         // Visual cue for editable days (Today or Yesterday < 12h)
@@ -153,9 +153,9 @@ export function HabitCalendar({ habits, records, onToggleHabit, isPrivacyMode = 
 
     return (
         <>
-            <div className="w-full h-full p-2 sm:p-4 animate-scale-in flex flex-col">
+            <div className="w-full h-auto lg:h-full p-2 sm:p-4 animate-scale-in flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6 shrink-0">
+                <div className="flex items-center justify-between mb-2 sm:mb-6 shrink-0">
                     <Button variant="ghost" size="icon" onClick={goToPrevMonth}>
                         <ChevronLeft className="h-5 w-5" />
                     </Button>
@@ -175,7 +175,7 @@ export function HabitCalendar({ habits, records, onToggleHabit, isPrivacyMode = 
                 </div>
 
                 {/* Calendar */}
-                <div className="grid grid-cols-7 gap-[clamp(4px,1.5vw,12px)] mb-2 shrink-0">
+                <div className="grid grid-cols-7 gap-x-[clamp(4px,1.5vw,12px)] mb-2 shrink-0">
                     {DAYS.map(d => (
                         <div key={d} className="text-center text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider py-2">
                             {d}
@@ -185,10 +185,8 @@ export function HabitCalendar({ habits, records, onToggleHabit, isPrivacyMode = 
                 {/* Days Grid: flex-1 to take available height on desktop, h-full to fill it */}
                 <div
                     className={cn(
-                        "grid grid-cols-7 gap-[clamp(4px,1.5vw,12px)]",
-                        "flex-1 h-full overflow-hidden",
-                        numRows === 6 ? "grid-rows-6" :
-                            numRows === 5 ? "grid-rows-5" : "grid-rows-4"
+                        "grid grid-cols-7 gap-[clamp(1px,1.5vw,8px)]",
+                        "h-auto lg:flex-1 lg:h-full lg:min-h-0 overflow-hidden"
                     )}
                 >
                     {renderDays()}

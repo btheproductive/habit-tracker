@@ -4,7 +4,7 @@ import { usePrivacy } from '@/context/PrivacyContext';
 import { toast } from 'sonner';
 import { HabitCalendar } from '@/components/HabitCalendar';
 import { WeeklyView } from '@/components/WeeklyView';
-import { DailyView } from '@/components/DailyView';
+import { AnnualView } from '@/components/AnnualView';
 import { HabitSettings } from '@/components/HabitSettings';
 import { MemoModal } from '@/components/MemoModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -98,7 +98,7 @@ const Index = () => {
   const [view, setView] = useState("month");
 
   return (
-    <div className="flex-1 h-dvh lg:min-h-dvh lg:h-auto overflow-hidden lg:overflow-visible flex flex-col pt-8 pb-4 px-4 sm:px-8 animate-fade-in relative z-10 w-full max-w-[2400px] mx-auto">
+    <div className="flex-1 h-dvh lg:min-h-dvh lg:h-auto overflow-hidden lg:overflow-visible flex flex-col pt-8 pb-0 sm:pb-8 px-4 sm:px-8 animate-fade-in relative z-10 w-full max-w-[2400px] mx-auto">
 
       {/* Background Glow */}
       <div className="fixed top-[-20%] left-[-10%] w-[50%] h-[50%] bg-primary/5 blur-[120px] rounded-full pointer-events-none -z-10" />
@@ -281,14 +281,14 @@ const Index = () => {
                   <LayoutGrid className="w-4 h-4" />
                   <span className="xs:inline">Settimana</span>
                 </TabsTrigger>
-                <TabsTrigger value="day" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm h-full sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2">
+                <TabsTrigger value="year" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm h-full sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2">
                   <ListTodo className="w-4 h-4" />
-                  <span className="xs:inline">Oggi</span>
+                  <span className="xs:inline">Anno</span>
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="flex-1 flex flex-col min-h-0 glass-panel rounded-2xl p-1 sm:p-2 lg:overflow-hidden">
+            <div className="flex-none lg:flex-1 flex flex-col h-auto lg:h-full lg:min-h-0 glass-panel rounded-2xl p-1 sm:p-2 lg:overflow-hidden">
               <TabsContent value="month" className="mt-0 animate-scale-in h-full">
                 <HabitCalendar
                   habits={goals}
@@ -305,16 +305,13 @@ const Index = () => {
                   isPrivacyMode={isPrivacyMode}
                 />
               </TabsContent>
-              <TabsContent value="day" className="mt-0 animate-scale-in h-full">
-                <div className="flex justify-center h-full">
-                  <DailyView
-                    habits={goals}
-                    records={records}
-                    onToggleHabit={toggleGoal}
-                    isPrivacyMode={isPrivacyMode}
-                    date={new Date()}
-                  />
-                </div>
+              <TabsContent value="year" className="mt-0 animate-scale-in h-full">
+                <AnnualView
+                  habits={goals}
+                  records={records}
+                  onToggleHabit={toggleGoal}
+                  isPrivacyMode={isPrivacyMode}
+                />
               </TabsContent>
             </div>
           </Tabs>

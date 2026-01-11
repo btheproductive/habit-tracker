@@ -21,4 +21,6 @@
   - **Layout**: Optimized sidebar alignment, restored natural flow, and tightened bottom spacing.
   - **Tabs**: Fixed visual alignment of tab triggers and selection highlight.
   - **Weekly View**: Aligned layout behavior with monthly view, implementing dynamic vertical stretching for habit blocks.
-  - **Mobile Layout**: Implemented "Native App Shell" lock and `Flexbox` architecture. Finalized mobile view by hiding "System Status" and maintaining precise 8px spacing between the Protocollo header and the Calendar.
+  - **Mobile Layout**: Implemented "Native App Shell". Finalized mobile calendar with `shrink-wrap` strategy (`h-auto`, `flex-none`). This forces the calendar card to occupy only the exact vertical space needed by its content, eliminating internal black voids while maintaining perfect cell proportions.
+  - **Edge-to-Edge**: Removed bottom padding (`pb-4`) on mobile container to ensure the calendar box sits flush with the bottom of the content area, eliminating the "empty black block".
+  - **Annual View**: Replaced "Daily" view with a new "Annual" view (`AnnualView.tsx`), offering a 12-month heatmap grid to visualize habit consistency over the entire year.
