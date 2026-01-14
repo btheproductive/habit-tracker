@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useGoals } from '@/hooks/useGoals';
 import { usePrivacy } from '@/context/PrivacyContext';
 import { toast } from 'sonner';
@@ -23,7 +24,7 @@ import {
   AlertDialogTrigger,
 
 } from "@/components/ui/alert-dialog";
-import { LayoutGrid, Calendar, ListTodo, Download, Trash2, Eye, EyeOff, Wifi, WifiOff, AlertTriangle, HeartPulse, Circle } from 'lucide-react';
+import { LayoutGrid, Calendar, ListTodo, Download, Trash2, Eye, EyeOff, Wifi, WifiOff, AlertTriangle, HeartPulse, Circle, Database } from 'lucide-react';
 import { MoodInput } from '@/components/mood/MoodInput';
 import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { useTodaysMood } from '@/hooks/useMoods';
@@ -31,6 +32,7 @@ import { cn } from '@/lib/utils';
 import { Drawer, DrawerContent, DrawerTrigger, DrawerHeader, DrawerTitle, DrawerDescription } from "@/components/ui/drawer";
 
 const Index = () => {
+  const navigate = useNavigate();
   const { status, latency } = useSystemStatus();
   const { data: todaysMood } = useTodaysMood();
   const {
@@ -201,6 +203,16 @@ const Index = () => {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 sm:h-9 sm:w-9 border-primary/20 bg-primary/5 hover:bg-primary/10"
+                title="Backup Completo"
+                onClick={() => navigate('/complete-backup')}
+              >
+                <Database className="h-4 w-4" />
+              </Button>
 
               <AlertDialog>
                 <AlertDialogTrigger asChild>

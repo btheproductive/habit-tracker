@@ -259,6 +259,33 @@ const Stats = () => {
                             />
                         </div>
 
+                        {/* AI Coach Card - Desktop Only */}
+                        <div className="hidden lg:block">
+                            <div
+                                onClick={() => window.location.hash = '/ai-coach'}
+                                className="glass-panel rounded-3xl p-6 cursor-pointer hover:scale-[1.02] transition-all duration-300 border-2 border-primary/20 hover:border-primary/40 group"
+                            >
+                                <div className="flex items-start gap-4">
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                                        <Sparkles className="w-7 h-7 text-primary animate-pulse" />
+                                    </div>
+                                    <div className="flex-1">
+                                        <h3 className="text-lg sm:text-xl font-display font-semibold mb-2 flex items-center gap-2">
+                                            AI Coach
+                                            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-normal">Nuovo</span>
+                                        </h3>
+                                        <p className="text-sm text-muted-foreground mb-3">
+                                            Genera un report settimanale personalizzato con analisi AI dei tuoi progressi e suggerimenti concreti per migliorare.
+                                        </p>
+                                        <div className="flex items-center gap-2 text-xs text-primary">
+                                            <span className="font-semibold">Clicca per iniziare</span>
+                                            <span>→</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div className="glass-panel rounded-3xl p-4 sm:p-6">
                             <h3 className="text-base sm:text-lg font-display font-semibold mb-4 flex items-center gap-2">
                                 <span className="w-2 h-2 rounded-sm bg-primary animate-pulse" />

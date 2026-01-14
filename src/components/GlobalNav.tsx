@@ -1,9 +1,10 @@
 import { NavLink } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { PieChart, Grid3X3, BarChart2 } from 'lucide-react';
+import { PieChart, Grid3X3, BarChart2, Sparkles } from 'lucide-react';
 
 const navItems = [
   { to: '/stats', label: 'Statistiche', icon: BarChart2 },
+  { to: '/ai-coach', label: 'AI Coach', icon: Sparkles },
   { to: '/macro-goals', label: 'Macro Obiettivi', icon: PieChart },
 
 ];
