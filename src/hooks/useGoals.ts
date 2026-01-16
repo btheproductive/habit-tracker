@@ -12,7 +12,6 @@ export function useGoals() {
     const { data: goals, isLoading: isLoadingGoals, refetch: refetchGoals } = useQuery({
         queryKey: ['goals'],
         queryFn: async () => {
-            console.log('Fetching goals from database...');
             const { data, error } = await supabase
                 .from('goals')
                 .select('*')
@@ -23,8 +22,6 @@ export function useGoals() {
                 toast.error('Errore caricamento obiettivi');
                 throw error;
             }
-            console.log('Goals fetched:', data?.length, 'goals');
-            console.log('First 3 goals order:', data?.slice(0, 3).map((g: any) => ({ title: g.title, display_order: g.display_order })));
             return data as Goal[];
         },
     });
@@ -319,31 +316,24 @@ export function useGoals() {
                 throw new Error('Non sei autenticato. Effettua il login.');
             }
 
-            console.log('Updating order for goals:', reorderedGoals);
-
             // Bulk update using Promise.all
             const updates = reorderedGoals.map(async ({ id, display_order }) => {
-                const { data, error, count } = await (supabase
+                const { error } = await (supabase
                     .from('goals') as any)
                     .update({ display_order })
                     .eq('id', id)
                     .eq('user_id', session.user.id);
 
                 if (error) {
-                    console.error(`Error updating goal ${id}:`, error);
                     throw error;
                 }
 
-                console.log(`Updated goal ${id} to order ${display_order}:`, { data, count });
-
-                return { id, display_order, updated: true };
+                return { id, display_order };
             });
 
-            const results = await Promise.all(updates);
-            console.log('Order update completed:', results);
+            await Promise.all(updates);
         },
         onSuccess: async () => {
-            console.log('Update successful, invalidating and refetching...');
             await queryClient.invalidateQueries({ queryKey: ['goals'] });
             // Explicitly refetch to ensure we get the new order
             setTimeout(() => {
@@ -352,7 +342,6 @@ export function useGoals() {
             toast.success('Ordine salvato');
         },
         onError: (e: any) => {
-            console.error('Update order error:', e);
             toast.error('Errore salvataggio ordine: ' + e.message);
         }
     });
