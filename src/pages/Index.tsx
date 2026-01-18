@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { HabitCalendar } from '@/components/HabitCalendar';
 import { WeeklyView } from '@/components/WeeklyView';
 import { AnnualView } from '@/components/AnnualView';
+import { LifeView } from '@/components/LifeView';
 import { HabitSettings } from '@/components/HabitSettings';
 import { MemoModal } from '@/components/MemoModal';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -25,7 +26,7 @@ import {
   AlertDialogTrigger,
 
 } from "@/components/ui/alert-dialog";
-import { LayoutGrid, Calendar, ListTodo, Download, Trash2, Eye, EyeOff, Wifi, WifiOff, AlertTriangle, HeartPulse, Circle, Database, Bot } from 'lucide-react';
+import { LayoutGrid, Calendar, ListTodo, Download, Trash2, Eye, EyeOff, Wifi, WifiOff, AlertTriangle, HeartPulse, Circle, Database, Bot, Hourglass } from 'lucide-react';
 import { MoodInput } from '@/components/mood/MoodInput';
 import { useSystemStatus } from '@/hooks/useSystemStatus';
 import { useTodaysMood } from '@/hooks/useMoods';
@@ -306,7 +307,7 @@ const Index = () => {
 
           <Tabs defaultValue="month" value={view} onValueChange={setView} className="w-full h-full flex flex-col">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-4 lg:mb-4 shrink-0">
-              <TabsList className="grid w-full grid-cols-3 bg-card/40 border border-white/10 backdrop-blur-md rounded-xl p-1 shadow-sm h-10 sm:h-auto">
+              <TabsList className="grid w-full grid-cols-4 bg-card/40 border border-white/10 backdrop-blur-md rounded-xl p-1 shadow-sm h-10 sm:h-auto">
                 <TabsTrigger value="month" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm h-full sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2">
                   <Calendar className="w-4 h-4" />
                   <span className="xs:inline">Mese</span>
@@ -318,6 +319,10 @@ const Index = () => {
                 <TabsTrigger value="year" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm h-full sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2">
                   <ListTodo className="w-4 h-4" />
                   <span className="xs:inline">Anno</span>
+                </TabsTrigger>
+                <TabsTrigger value="vita" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium text-xs sm:text-sm h-full sm:py-2 flex items-center justify-center gap-1.5 sm:gap-2">
+                  <Hourglass className="w-4 h-4" />
+                  <span className="xs:inline">Vita</span>
                 </TabsTrigger>
               </TabsList>
             </div>
@@ -344,6 +349,13 @@ const Index = () => {
                   habits={goals}
                   records={records}
                   onToggleHabit={toggleGoal}
+                  isPrivacyMode={isPrivacyMode}
+                />
+              </TabsContent>
+              <TabsContent value="vita" className="mt-0 animate-scale-in h-full">
+                <LifeView
+                  habits={goals}
+                  records={records}
                   isPrivacyMode={isPrivacyMode}
                 />
               </TabsContent>

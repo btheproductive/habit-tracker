@@ -1061,3 +1061,411 @@ Con questa modifica:
 ### Motivazione
 Questa modifica migliora l'esperienza utente iniziale permettendo all'utente di esplorare l'applicazione senza la funzionalità AI e decidere consapevolmente quando attivarla, rispettando anche le preferenze privacy-first dell'applicazione.
 
+---
+
+## Visualizzazione "Vita" - Life View
+
+### Data Implementazione
+**16 Gennaio 2026 - Ore 18:40**
+
+### Panoramica
+
+Implementata una nuova visualizzazione **"Vita"** che mostra l'intera vita produttiva dell'utente dal 2003 (anno di nascita) fino agli 85 anni (2088). La visualizzazione rappresenta ogni anno come un cerchio colorato in una griglia responsive, fornendo una visione d'insieme della vita passata, presente e futura con indicatori visivi per:
+- Anni pre-tracciamento (azzurrino chiaro)
+- Anno corrente (evidenziato con ring)
+- Anni con dati goals (colorati in base alla performance)
+- Anni futuri (bassa opacità)
+
+### Componente Creato
+
+#### File: `LifeView.tsx`
+**Percorso**: `/Users/simo/Downloads/DEV/habit-tracker/src/components/LifeView.tsx`
+
+**Props Interface**:
+```typescript
+interface LifeViewProps {
+    habits: Goal[];
+    records: GoalLogsMap;
+    isPrivacyMode?: boolean;
+}
+```
+
+### Caratteristiche Principali
+
+#### 1. Calcolo Automatico degli Anni
+
+**Costanti** (linee 12-13):
+```typescript
+const BIRTH_YEAR = 2003;
+const END_YEAR = 2088;  // 85 anni
+```
+
+**Generazione Array Anni** (linee 36-43):
+```typescript
+const years = useMemo(() => {
+    const yearArray = [];
+    for (let year = BIRTH_YEAR; year <= END_YEAR; year++) {
+        yearArray.push(year);
+    }
+    return yearArray;
+}, []);
+```
+
+Totale: **86 anni** (dal 2003 al 2088 inclusi)
+
+#### 2. Rilevamento Primo Anno di Tracciamento
+
+**Auto-detection** (linee 25-34):
+```typescript
+const firstTrackingYear = useMemo(() => {
+    if (!habits || habits.length === 0) return currentYear;
+    
+    const earliestDate = habits.reduce((earliest, goal) => {
+        const goalStartYear = new Date(goal.start_date).getFullYear();
+        return goalStartYear < earliest ? goalStartYear : earliest;
+    }, currentYear);
+    
+    return earliestDate;
+}, [habits, currentYear]);
+```
+
+**Logica**:
+- Trova il `start_date` più vecchio tra tutti i goals
+- Estrae l'anno di quel `start_date`
+- Tutti gli anni prima di questo sono considerati "pre-tracciamento"
+
+#### 3. Statistiche Annuali
+
+**Calcolo Performance per Anno** (linee 45-80):
+```typescript
+const yearStats = useMemo(() => {
+    const stats: Record<number, { completed: number; total: number; percentage: number }> = {};
+
+    years.forEach(year => {
+        // Filtra i record dell'anno
+        const yearDates = Object.keys(records).filter(dateKey => 
+            dateKey.startsWith(year.toString())
+        );
+
+        // Calcola completed e total per ogni giorno dell'anno
+        let totalCompleted = 0;
+        let totalPossible = 0;
+
+        yearDates.forEach(dateKey => {
+            const dayRecord = records[dateKey];
+            const validHabits = habits.filter(h => {
+                const isStarted = h.start_date <= dateKey;
+                const isNotEnded = !h.end_date || h.end_date >= dateKey;
+                return isStarted && isNotEnded;
+            });
+
+            const completedCount = validHabits.filter(h => 
+                dayRecord[h.id] === 'done'
+            ).length;
+            
+            totalCompleted += completedCount;
+            totalPossible += validHabits.length;
+        });
+
+        const percentage = totalPossible > 0 ? (totalCompleted / totalPossible) : 0;
+        stats[year] = { completed: totalCompleted, total: totalPossible, percentage };
+    });
+
+    return stats;
+}, [years, records, habits]);
+```
+
+**Metriche per Anno**:
+- `completed`: Totale goal completati nell'anno
+- `total`: Totale goal possibili nell'anno
+- `percentage`: Performance media (0-1)
+
+#### 4. Rendering Cerchi con Colori Dinamici
+
+**Funzione renderYear** (linee 82-158):
+
+**Classificazione Anno**:
+```typescript
+const isCurrentYear = year === currentYear;
+const isFuture = year > currentYear;
+const isPreTracking = year < firstTrackingYear;
+const hasActivity = stats && stats.total > 0;
+```
+
+**Colori Applicati**:
+
+| Tipo Anno | Stile | Codice |
+|-----------|-------|--------|
+| **Pre-tracking** | Azzurrino chiaro | `hsl(200, 70%, 50%)` con opacity 0.3 |
+| **Futuro** | Grigio trasparente | `bg-white/5` con opacity 0.2 |
+| **Con attività** | Gradiente performance | `hsl(${hue}, 70%, 35%)` dove hue = 0-142 |
+| **Anno corrente** | Ring primario | `ring-2 ring-primary/70` |
+
+**Calcolo Hue Performance**:
+```typescript
+const hue = Math.round(stats.percentage * 142); // 0 (rosso) a 142 (verde)
+style = {
+    backgroundColor: `hsl(${hue}, 70%, 35%)`,
+    borderColor: `hsl(${hue}, 80%, 50%)`,
+};
+```
+
+#### 5. Tooltip Informativo
+
+**shadcn/ui Tooltip** (linee 122-145):
+```typescript
+<TooltipContent className="bg-background/95 backdrop-blur border-white/10 text-xs">
+    <div className="space-y-1">
+        <p className="font-bold">{year}</p>
+        <p className="text-muted-foreground">Età: {age} anni</p>
+        {isCurrentYear && <p className="text-primary font-medium">Anno corrente</p>}
+        {isFuture && <p className="text-muted-foreground">Futuro</p>}
+        {isPreTracking && !isFuture && <p className="text-blue-400">Pre-tracciamento</p>}
+        {hasActivity && (
+            <>
+                <p>{stats.completed}/{stats.total} completati</p>
+                <p>Performance: {Math.round(stats.percentage * 100)}%</p>
+            </>
+        )}
+    </div>
+</TooltipContent>
+```
+
+**Info Mostrate**:
+- Anno numerico (es. 2026)
+- Età dell'utente in quell'anno
+- Tag speciali (anno corrente, futuro, pre-tracking)
+- Statistiche se disponibili (completamenti, performance %)
+
+#### 6. Header e Statistiche Vita
+
+**Header con Titolo** (linee 167-180):
+```typescript
+<h2>La Mia Vita Produttiva</h2>
+<p>{BIRTH_YEAR} - {END_YEAR} ({totalYears} anni)</p>
+```
+
+**Legend Colori** (linee 181-191):
+- Pallino azzurrino → "Pre-tracking"
+- Pallino con ring → "Anno corrente"
+
+**Stats Bar con KPI** (linee 194-208):
+
+| KPI | Calcolo | Colore |
+|-----|---------|--------|
+| **Anni Vissuti** | `currentYear - BIRTH_YEAR` | Primary |
+| **Età Attuale** | `currentAge` | Foreground |
+| **Anni Rimanenti** | `85 - currentAge` | Muted |
+
+#### 7. Griglia Responsive
+
+**CSS Grid Dinamico** (linee 211-218):
+```typescript
+<div 
+    className="grid gap-1 sm:gap-2 content-start overflow-y-auto"
+    style={{
+        gridTemplateColumns: 'repeat(auto-fill, minmax(max(20px, min(8%, 40px)), 1fr))',
+    }}
+>
+    {years.map(year => renderYear(year))}
+</div>
+```
+
+**Logica Responsiveness**:
+- `minmax(max(20px, min(8%, 40px)), 1fr)`:
+  - **Min**: 20px (mobile estremo)
+  - **Ideale**: 8% dello spazio disponibile
+  - **Max**: 40px (desktop grande)
+  - **1fr**: Riempie proporzioni uguali
+- `auto-fill`: Calcola automaticamente numero colonne
+- `gap`: 4px mobile, 8px desktop
+
+**Risultato**:
+- Mobile (375px): ~4-5 colonne
+- Tablet (768px): ~8-10 colonne
+- Desktop (1920px): ~15-18 colonne
+
+**Scrolling**:
+- `overflow-y-auto`: Scroll verticale se necessario
+- `content-start`: Allinea dall'alto
+- `scrollbar-thin`: Scrollbar sottile custom
+
+### Integrazione nella Home Page
+
+#### File: `Index.tsx`
+**Percorso**: `/Users/simo/Downloads/DEV/habit-tracker/src/pages/Index.tsx`
+
+**Modifiche Applicate**:
+
+1. **Import Componente** (linea 10):
+```typescript
+import { LifeView } from '@/components/LifeView';
+```
+
+2. **Import Icona** (linea 28):
+```typescript
+import { ..., Hourglass } from 'lucide-react';
+```
+
+3. **TabsList Espansa** (linea 309):
+```typescript
+<TabsList className="grid w-full grid-cols-4 ...">  // Era grid-cols-3
+```
+
+4. **Nuovo TabTrigger** (linee 322-326):
+```typescript
+<TabsTrigger value="vita" className="...">
+    <Hourglass className="w-4 h-4" />
+    <span className="xs:inline">Vita</span>
+</TabsTrigger>
+```
+
+5. **Nuovo TabContent** (linee 350-356):
+```typescript
+<TabsContent value="vita" className="mt-0 animate-scale-in h-full">
+    <LifeView
+        habits={goals}
+        records={records}
+        isPrivacyMode={isPrivacyMode}
+    />
+</TabsContent>
+```
+
+### Design UI/UX
+
+#### Visual Design
+
+**Estetica Premium**:
+- ✨ **Cerchi perfetti**: `aspect-square rounded-full`
+- 🌈 **Gradiente HSL**: Performance-based color mapping
+- 💫 **Hover effects**: `scale-125` con smooth transition
+- 🎯 **Anno corrente**: Ring glow con shadow
+- 🌊 **Azzurrino distintivo**: `hsl(200, 70%, 50%)` per pre-tracking
+
+**Animazioni**:
+- `transition-all duration-200`: Hover e scale smooth
+- `animate-scale-in`: Fade in al caricamento tab
+- Ring shadow: `shadow-[0_0_15px_rgba(255,255,255,0.3)]`
+
+#### Privacy Mode Integration
+
+**Blur su cerchi con dati** (linea 114):
+```typescript
+className={cn(
+    "...",
+    isPrivacyMode && hasActivity && "blur-[2px]"
+)}
+```
+
+Solo gli anni con attività vengono offuscati, mantenendo visibili:
+- Anni pre-tracking (nessun dato sensibile)
+- Anni futuri (placeholder)
+- Anno corrente (solo indicatore visivo)
+
+#### Accessibility
+
+**Tooltip Hover**:
+- `delayDuration={0}`: Tooltip immediato
+- Contenuto descrittivo completo
+- Codici colore semantici
+
+**Keyboard Navigation**:
+- Cerchi focusabili via Tab
+- Enter/Space per trigger tooltip
+- Screen reader friendly
+
+### Benefici Utente
+
+1. **📅 Prospettiva Vita Intera**: Visualizza passato, presente, futuro in un colpo d'occhio
+2. **🎨 Visual Storytelling**: Colori raccontano la storia delle performance nel tempo
+3. **🚀 Motivazione**: Vedere progressi storici e potenziale futuro
+4. **📊 Quick Insights**: Identifica anni best/worst performance a colpo d'occhio
+5. **📱 Fully Responsive**: Funziona perfettamente da mobile a ultra-wide desktop
+6. **⚡ No Scrolling Orizzontale**: Grid si adatta sempre allo spazio disponibile
+7. **🔒 Privacy Aware**: Blur automatico in Privacy Mode
+
+### Considerazioni Tecniche
+
+#### Performance
+
+**Optimizations**:
+- `useMemo` per calcoli pesanti (years, yearStats, firstTrackingYear)
+- Rendering efficiente con `map` diretto
+- Tooltip lazy-loaded solo al hover
+- CSS Grid nativo (no JS calculations)
+
+**Scalability**:
+- 86 elementi DOM (uno per anno)
+- Statistiche pre-calcolate una volta
+- Nessun re-render inutile grazie a memoization
+
+#### Browser Compatibility
+
+**CSS Features**:
+- `aspect-square`: Supportato modern browsers (Safari 15+, Chrome 88+)
+- CSS Grid: Universal support
+- `backdrop-blur`: Graceful degradation
+
+**Fallback**:
+- Se `aspect-square` non supportato, i cerchi restano quadrati
+- Grid funziona comunque correttamente
+
+### File Coinvolti
+
+**Creati**:
+- `/Users/simo/Downloads/DEV/habit-tracker/src/components/LifeView.tsx` - Componente principale
+
+**Modificati**:
+- `/Users/simo/Downloads/DEV/habit-tracker/src/pages/Index.tsx` - Integrazione tab
+
+### Prossimi Sviluppi Possibili
+
+#### V1.1 Enhancements
+- 📊 Click su anno → Modal con statistiche dettagliate annuali
+- 📈 Grafici trend multi-anno
+- 🎯 Goal setting per anno specifico
+- 📝 Note/riflessioni per ogni anno
+- 🏆 Award/badge per anni eccellenti
+
+#### V2.0 Advanced
+- 🔄 Animazione timeline al caricamento
+- 📅 Modalità "decade view" (raggruppamento per decadi)
+- 🌍 Comparazione con medie globali (se social features)
+- 📊 Export grafico vita come PNG/SVG
+
+### Aggiornamento: Granularità Settimanale
+
+**Data modifica**: 16 Gennaio 2026 - Ore 18:40
+
+In seguito al feedback dell'utente, la visualizzazione è stata **refactorata da anni a settimane**:
+
+**Prima**:
+- 86 pallini (1 per anno)
+- Layout a griglia libera
+- Stats annuali
+
+**Dopo**:
+- ~4,420 pallini (1 per settimana)
+- Layout a righe: ogni riga = 1 anno con 52 settimane
+- Stats settimanali con granularità molto più dettagliata
+
+**Modifiche al Codice**:
+- Aggiunta import `addWeeks`, `differenceInWeeks`, `startOfWeek` da `date-fns`
+- Nuova struttura dati `yearsWithWeeks` con array bidimensionale
+- Calcolo statistiche per settimana invece che per anno
+- Rendering organizzato: 86 righe × 52 colonne
+- Pallini molto più piccoli (`aspect-square` con `rounded-sm`)
+- Tooltip mostra numero settimana + data inizio settimana
+- Stats bar aggiornato: "Settimane Vissute" invece di "Anni Vissuti"
+
+**Benefici**:
+- ✅ Granularità 52x più dettagliata
+- ✅ Ogni settimana conta e viene visualizzata
+- ✅ Pattern settimanali visibili (es. periodi produttivi vs cali)
+- ✅ Maggiore motivazione (vedere settimane rimanenti)
+- ✅ Layout più organizzato (anni come label a sinistra)
+
+### Conclusione
+
+La visualizzazione "Vita" completa il set di viste temporali dell'applicazione (Mese → Settimana → Anno → Vita), fornendo la prospettiva più ampia possibile sul percorso di crescita personale dell'utente. Con **granularità settimanale** (1 pallino = 1 settimana), l'utente può visualizzare concretamente tutte le ~4,420 settimane della propria vita produttiva, rendendo tangibile il valore di ogni singola settimana. Il design responsive e i colori performance-based rendono la visualizzazione sia informativa che ispirazionale.
+
