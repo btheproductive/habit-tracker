@@ -221,7 +221,7 @@ export function LifeView({ habits, records, isPrivacyMode = false }: LifeViewPro
                             </div>
                             <div
                                 className="flex-1 grid gap-1.5 h-full"
-                                style={{ gridTemplateColumns: `repeat(${rowMonths.length}, 1fr)` }}
+                                style={{ gridTemplateColumns: `repeat(${MONTHS_PER_ROW}, 1fr)` }}
                             >
                                 {rowMonths.map(({ date }) => renderMonth(date))}
                             </div>
