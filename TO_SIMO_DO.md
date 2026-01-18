@@ -18,13 +18,6 @@
 - [ ] Salva edit
 - [ ] Verifica che ora puoi trascinare di nuovo
 
-#### Step 8: Privacy Mode Interaction
-- [ ] Abilita Privacy Mode (switch nella pagina Index)
-- [ ] Apri "Gestisci Abitudini"
-- [ ] Verifica che i nomi delle abitudini siano **blurred**
-- [ ] Verifica che il drag & drop funzioni comunque
-- [ ] Disabilita Privacy → verifica nomi tornino visibili
-
 #### Step 9: Test con Molte Abitudini
 - [ ] Crea almeno 10-15 abitudini
 - [ ] Prova a trascinare dalla cima al fondo

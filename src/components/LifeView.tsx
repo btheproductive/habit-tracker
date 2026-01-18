@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { format, startOfYear, addWeeks, differenceInWeeks, startOfWeek } from 'date-fns';
+import { format, startOfYear, addMonths, differenceInMonths, startOfMonth, endOfMonth, eachDayOfInterval } from 'date-fns';
 import { it } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Goal, GoalLogsMap } from '@/types/goals';
@@ -13,14 +13,14 @@ interface LifeViewProps {
 
 const BIRTH_YEAR = 2003;
 const END_YEAR = 2088; // 85 years old
-const WEEKS_PER_YEAR = 52;
+const MONTHS_PER_ROW = 29;
 
 export function LifeView({ habits, records, isPrivacyMode = false }: LifeViewProps) {
     const today = new Date();
     const currentYear = today.getFullYear();
-    const currentWeek = startOfWeek(today, { weekStartsOn: 1 });
+    const currentMonth = startOfMonth(today);
 
-    // Calculate the first week of goal tracking
+    // Calculate the first month of goal tracking
     const firstTrackingDate = useMemo(() => {
         if (!habits || habits.length === 0) return today;
 
@@ -29,130 +29,112 @@ export function LifeView({ habits, records, isPrivacyMode = false }: LifeViewPro
             return goalStartDate < earliest ? goalStartDate : earliest;
         }, today);
 
-        return startOfWeek(earliestDate, { weekStartsOn: 1 });
+        return startOfMonth(earliestDate);
     }, [habits, today]);
 
-    // Generate data structure: years with weeks
-    const yearsWithWeeks = useMemo(() => {
-        const result = [];
+    // Generate flat array of all months
+    const allMonthsData = useMemo(() => {
+        const months: Array<{ date: Date; year: number }> = [];
 
         for (let year = BIRTH_YEAR; year <= END_YEAR; year++) {
-            const weeks = [];
             const yearStart = startOfYear(new Date(year, 0, 1));
 
-            for (let weekNum = 0; weekNum < WEEKS_PER_YEAR; weekNum++) {
-                const weekStart = addWeeks(startOfWeek(yearStart, { weekStartsOn: 1 }), weekNum);
-                weeks.push(weekStart);
+            for (let monthNum = 0; monthNum < 12; monthNum++) {
+                const monthStart = addMonths(yearStart, monthNum);
+                months.push({ date: monthStart, year });
             }
-
-            result.push({ year, weeks });
         }
 
-        return result;
+        return months;
     }, []);
 
-    // Calculate statistics for each week
-    const weekStats = useMemo(() => {
+    // Group months into rows
+    const monthRows = useMemo(() => {
+        const rows = [];
+        for (let i = 0; i < allMonthsData.length; i += MONTHS_PER_ROW) {
+            rows.push(allMonthsData.slice(i, i + MONTHS_PER_ROW));
+        }
+        return rows;
+    }, [allMonthsData]);
+
+    // Calculate statistics for each month
+    const monthStats = useMemo(() => {
         const stats: Map<number, { completed: number; total: number; percentage: number }> = new Map();
 
-        yearsWithWeeks.forEach(({ weeks }) => {
-            weeks.forEach(weekStart => {
-                const weekTimestamp = weekStart.getTime();
+        allMonthsData.forEach(({ date: monthStart }) => {
+            const monthTimestamp = monthStart.getTime();
+            const monthEnd = endOfMonth(monthStart);
+            const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
 
-                // Get all dates in this week that have records
-                let totalCompleted = 0;
-                let totalPossible = 0;
+            let totalCompleted = 0;
+            let totalPossible = 0;
 
-                // Check 7 days of the week
-                for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
-                    const currentDay = new Date(weekStart);
-                    currentDay.setDate(currentDay.getDate() + dayOffset);
-                    const dateKey = format(currentDay, 'yyyy-MM-dd');
+            daysInMonth.forEach(day => {
+                const dateKey = format(day, 'yyyy-MM-dd');
+                const dayRecord = records[dateKey];
+                if (!dayRecord) return;
 
-                    const dayRecord = records[dateKey];
-                    if (!dayRecord) continue;
+                const validHabits = habits.filter(h => {
+                    const isStarted = h.start_date <= dateKey;
+                    const isNotEnded = !h.end_date || h.end_date >= dateKey;
+                    return isStarted && isNotEnded;
+                });
 
-                    // Find habits valid for this date
-                    const validHabits = habits.filter(h => {
-                        const isStarted = h.start_date <= dateKey;
-                        const isNotEnded = !h.end_date || h.end_date >= dateKey;
-                        return isStarted && isNotEnded;
-                    });
-
-                    const completedCount = validHabits.filter(h => dayRecord[h.id] === 'done').length;
-
-                    totalCompleted += completedCount;
-                    totalPossible += validHabits.length;
-                }
-
-                const percentage = totalPossible > 0 ? (totalCompleted / totalPossible) : 0;
-                stats.set(weekTimestamp, { completed: totalCompleted, total: totalPossible, percentage });
+                const completedCount = validHabits.filter(h => dayRecord[h.id] === 'done').length;
+                totalCompleted += completedCount;
+                totalPossible += validHabits.length;
             });
+
+            const percentage = totalPossible > 0 ? (totalCompleted / totalPossible) : 0;
+            stats.set(monthTimestamp, { completed: totalCompleted, total: totalPossible, percentage });
         });
 
         return stats;
-    }, [yearsWithWeeks, records, habits]);
+    }, [allMonthsData, records, habits]);
 
-    const renderWeek = (weekStart: Date, year: number) => {
-        const weekTimestamp = weekStart.getTime();
-        const currentWeekTimestamp = currentWeek.getTime();
+    const renderMonth = (monthStart: Date) => {
+        const monthTimestamp = monthStart.getTime();
+        const currentMonthTimestamp = currentMonth.getTime();
 
-        const isCurrentWeek = weekTimestamp === currentWeekTimestamp;
-        const isFuture = weekStart > today;
-        const isPreTracking = weekStart < firstTrackingDate;
-        const stats = weekStats.get(weekTimestamp);
+        const isCurrentMonth = monthTimestamp === currentMonthTimestamp;
+        const isFuture = monthStart > today;
+        const isPreTracking = monthStart < firstTrackingDate;
+        const stats = monthStats.get(monthTimestamp);
         const hasActivity = stats && stats.total > 0;
 
-        const weekNumber = differenceInWeeks(weekStart, startOfYear(new Date(year, 0, 1))) + 1;
-
-        let style: React.CSSProperties = {};
+        let bgColor = 'rgba(255, 255, 255, 0.05)';
 
         if (isFuture) {
-            // Future weeks - very subtle
-            style = {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                opacity: 0.2,
-            };
+            bgColor = 'rgba(255, 255, 255, 0.05)';
         } else if (isPreTracking) {
-            // Pre-tracking weeks - light blue with reduced opacity
-            style = {
-                backgroundColor: 'hsl(200, 70%, 50%)',
-                opacity: 0.3,
-            };
+            bgColor = 'hsl(200, 70%, 50%)';
         } else if (hasActivity) {
-            // Weeks with activity - color based on performance
-            const hue = Math.round(stats.percentage * 142); // 0 (red) to 142 (green)
-            style = {
-                backgroundColor: `hsl(${hue}, 70%, 40%)`,
-            };
-        } else {
-            // No activity
-            style = {
-                backgroundColor: 'rgba(255, 255, 255, 0.05)',
-            };
+            const hue = Math.round(stats.percentage * 142);
+            bgColor = `hsl(${hue}, 70%, 40%)`;
         }
 
-        const weekLabel = format(weekStart, 'dd MMM yyyy', { locale: it });
+        const monthLabel = format(monthStart, 'MMMM yyyy', { locale: it });
 
         return (
-            <TooltipProvider key={weekTimestamp}>
+            <TooltipProvider key={monthTimestamp}>
                 <Tooltip delayDuration={100}>
                     <TooltipTrigger asChild>
                         <div
-                            style={style}
+                            style={{ backgroundColor: bgColor }}
                             className={cn(
-                                "w-full aspect-square rounded-sm transition-all duration-150 hover:scale-150 hover:z-10 hover:rounded-md",
-                                isCurrentWeek && "ring-1 ring-primary shadow-[0_0_8px_rgba(255,255,255,0.4)]",
-                                !isFuture && "hover:brightness-125",
+                                "rounded-sm transition-all duration-150 hover:scale-110 hover:z-10 border border-black/40",
+                                isCurrentMonth && "ring-2 ring-primary ring-offset-1 ring-offset-background shadow-[0_0_8px_rgba(255,255,255,0.4)]",
+                                !isFuture && "hover:brightness-125 hover:border-white/30",
+                                isPreTracking && !isFuture && "opacity-30",
+                                isFuture && "opacity-20",
                                 isPrivacyMode && hasActivity && "blur-[1px]"
                             )}
                         />
                     </TooltipTrigger>
                     <TooltipContent className="bg-background/95 backdrop-blur border-white/10 text-xs">
                         <div className="space-y-1">
-                            <p className="font-bold capitalize">{weekLabel}</p>
-                            <p className="text-muted-foreground">Settimana {weekNumber} del {year}</p>
-                            {isCurrentWeek && <p className="text-primary font-medium">Settimana corrente</p>}
+                            <p className="font-bold capitalize">{monthLabel}</p>
+                            {isCurrentMonth && <p className="text-primary font-medium">Mese corrente</p>}
                             {isFuture && <p className="text-muted-foreground">Futuro</p>}
                             {isPreTracking && !isFuture && <p className="text-blue-400">Pre-tracciamento</p>}
                             {hasActivity && (
@@ -173,67 +155,79 @@ export function LifeView({ habits, records, isPrivacyMode = false }: LifeViewPro
     };
 
     const totalYears = END_YEAR - BIRTH_YEAR + 1;
-    const totalWeeks = totalYears * WEEKS_PER_YEAR;
+    const totalMonths = totalYears * 12;
     const currentAge = currentYear - BIRTH_YEAR;
-    const weeksLived = differenceInWeeks(today, new Date(BIRTH_YEAR, 0, 1));
-    const weeksRemaining = (85 * 52) - weeksLived;
+    const monthsLived = differenceInMonths(today, new Date(BIRTH_YEAR, 0, 1));
+    const monthsRemaining = (85 * 12) - monthsLived;
 
     return (
-        <div className="w-full h-full p-2 sm:p-4 animate-scale-in flex flex-col overflow-hidden">
+        <div className="w-full h-full p-2 sm:p-4 animate-scale-in flex flex-col">
             {/* Header */}
-            <div className="flex flex-col sm:flex-row items-center justify-between mb-3 sm:mb-4 shrink-0 gap-2">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-2 sm:mb-3 shrink-0 gap-1">
                 <div>
-                    <h2 className="text-lg sm:text-xl font-display font-bold">
+                    <h2 className="text-base sm:text-lg font-display font-bold">
                         La Mia Vita Produttiva
                     </h2>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">
-                        {BIRTH_YEAR} - {END_YEAR} • {totalWeeks.toLocaleString()} settimane
+                    <p className="text-[9px] sm:text-[10px] text-muted-foreground">
+                        {BIRTH_YEAR} - {END_YEAR} • {totalMonths.toLocaleString()} mesi
                     </p>
                 </div>
-                <div className="flex items-center gap-3 text-[10px] sm:text-xs">
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-sm" style={{ backgroundColor: 'hsl(200, 70%, 50%)', opacity: 0.3 }} />
+                <div className="flex items-center gap-2 text-[9px] sm:text-[10px]">
+                    <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-sm" style={{ backgroundColor: 'hsl(200, 70%, 50%)', opacity: 0.3 }} />
                         <span className="text-muted-foreground">Pre-tracking</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-sm ring-1 ring-primary" style={{ backgroundColor: 'hsl(71, 70%, 40%)' }} />
+                    <div className="flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-sm ring-1 ring-primary" style={{ backgroundColor: 'hsl(71, 70%, 40%)' }} />
                         <span className="text-muted-foreground">Attuale</span>
                     </div>
                 </div>
             </div>
 
             {/* Stats Bar */}
-            <div className="mb-3 sm:mb-4 shrink-0 glass-card p-2 sm:p-3 rounded-lg">
-                <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="mb-2 sm:mb-3 shrink-0 glass-card p-2 rounded-lg">
+                <div className="grid grid-cols-3 gap-2 text-center">
                     <div>
-                        <p className="text-base sm:text-xl font-bold text-primary">{weeksLived.toLocaleString()}</p>
-                        <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase">Settimane Vissute</p>
+                        <p className="text-sm sm:text-base font-bold text-primary">{monthsLived.toLocaleString()}</p>
+                        <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase">Mesi Vissuti</p>
                     </div>
                     <div>
-                        <p className="text-base sm:text-xl font-bold text-foreground">{currentAge}</p>
-                        <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase">Anni</p>
+                        <p className="text-sm sm:text-base font-bold text-foreground">{currentAge}</p>
+                        <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase">Anni</p>
                     </div>
                     <div>
-                        <p className="text-base sm:text-xl font-bold text-muted-foreground/70">{weeksRemaining.toLocaleString()}</p>
-                        <p className="text-[9px] sm:text-[10px] text-muted-foreground uppercase">Settimane Rimanenti</p>
+                        <p className="text-sm sm:text-base font-bold text-muted-foreground/70">{monthsRemaining.toLocaleString()}</p>
+                        <p className="text-[8px] sm:text-[9px] text-muted-foreground uppercase">Mesi Rimanenti</p>
                     </div>
                 </div>
             </div>
 
-            {/* Grid Container - Years as rows, weeks as columns */}
-            <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent space-y-[2px]">
-                {yearsWithWeeks.map(({ year, weeks }) => (
-                    <div key={year} className="flex items-center gap-1 sm:gap-2">
-                        {/* Year Label */}
-                        <div className="w-8 sm:w-10 shrink-0 text-[9px] sm:text-[10px] font-bold text-muted-foreground text-right">
-                            {year}
+            {/* Grid - Simple grid layout without flex conflicts */}
+            <div
+                className="flex-1 min-h-0 grid gap-1.5 content-start overflow-hidden"
+                style={{
+                    gridTemplateRows: `repeat(${monthRows.length}, 1fr)`,
+                }}
+            >
+                {monthRows.map((rowMonths, rowIndex) => {
+                    const isFirstRow = rowIndex === 0;
+                    const isLastRow = rowIndex === monthRows.length - 1;
+                    const rowLabel = isFirstRow ? 'nato' : isLastRow ? 'morto' : '';
+
+                    return (
+                        <div key={rowIndex} className="flex items-center gap-1 min-h-0">
+                            <div className="w-6 sm:w-8 shrink-0 text-[8px] sm:text-[9px] font-bold text-right text-muted-foreground">
+                                {rowLabel}
+                            </div>
+                            <div
+                                className="flex-1 grid gap-1.5 h-full"
+                                style={{ gridTemplateColumns: `repeat(${rowMonths.length}, 1fr)` }}
+                            >
+                                {rowMonths.map(({ date }) => renderMonth(date))}
+                            </div>
                         </div>
-                        {/* Weeks Grid */}
-                        <div className="flex-1 grid gap-[1px] sm:gap-[2px]" style={{ gridTemplateColumns: `repeat(52, 1fr)` }}>
-                            {weeks.map(weekStart => renderWeek(weekStart, year))}
-                        </div>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
