@@ -1,5 +1,23 @@
 # Documentazione - Release Notes v1.0.0
 
+## 📅 Log Modifiche (Ultimi aggiornamenti)
+
+### [2026-01-20] SEO e Google Search Console
+- **Sitemap**: Creata `public/sitemap.xml` per indicizzare correttamente tutte le pagine pubbliche.
+- **Robots.txt**: Aggiornato per includere il link alla sitemap e permettere l'indicizzazione.
+- **Metadata**: Aggiornato `index.html` con:
+  - Tag `Canonical` standardizzato.
+  - Open Graph e Twitter Card meta tags corretti per la condivisione social.
+  - Titolo e descrizione migliorati per la SEO.
+  - Favicon path corretto per la subdirectory.
+- **GSC**: Aggiunte istruzioni manuali in `TO_SIMO_DO.md` per la configurazione della proprietà specifica.
+
+### [2026-01-20] Fix Deploy GitHub Pages
+- Aggiornata configurazione `vite.config.ts` base path a `/mattioli.OS/`.
+- Corretti i path delle risorse statiche.
+
+---
+
 ## Data Implementazione
 **14 Gennaio 2026**
 

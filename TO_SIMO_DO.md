@@ -1,170 +1,41 @@
-# Test Manuali - Soft-Delete Abitudini
 
-## Test 5: Database Verification
-1. [ ] Aprire Supabase Dashboard
-2. [ ] Navigare a Table Editor → goals
-3. [ ] Cercare il record con title = "Test Soft Delete"
-4. [ ] **Verifica**:
-   - [ ] Il record esiste ancora (non è stato eliminato fisicamente)
-   - [ ] `end_date` è uguale alla data odierna nel formato 'YYYY-MM-DD'
-   - [ ] `start_date` e tutti gli altri campi sono invariati
+# TO_SIMO_DO
 
-## Test 6: Cleanup
-1. [ ] Eliminare definitivamente "Test Soft Delete" dal database (opzionale)
-2. [ ] Oppure lasciarlo come esempio di abitudine archiviata
+## 🚀 Azioni Prioritarie (Google Search Console & SEO)
 
----
+> [!IMPORTANT]
+> **Risposta alla tua domanda su GSC:**
+> Anche se hai già la proprietà per `simo-hue.github.io`, è **fortemente consigliato** aggiungere una nuova proprietà specifica per `simo-hue.github.io/mattioli.OS` come **Prefisso URL**.
+> Questo permette a Google di indicizzare correttamente il sottocartella come un "sito" distinto e ti da dati molto più precisi.
 
-## Test Riordino Abitudini (test esistenti)
+### 1. Configurazione Google Search Console
+1.  Vai su [Google Search Console](https://search.google.com/search-console).
+2.  Clicca su "Aggiungi proprietà" (in alto a sinistra).
+3.  Scegli il tipo **Prefisso URL** (a destra).
+4.  Inserisci l'URL completo: `https://simo-hue.github.io/mattioli.OS/`
+5.  Clicca "Continua". Probabilmente verrà verificata automaticamente dato che possiedi già il dominio principale.
 
-#### Step 5: Test Aggiungi Nuova Abitudine
-- [ ] Riordina alcune abitudini esistenti in modo custom
-- [ ] Aggiungi una nuova abitudine
-- [ ] Verifica che la nuova abitudine appaia **in fondo** alla lista
-- [ ] Verifica che sia trascinabile immediatamente
-- [ ] Spostala in cima
-- [ ] Ricarica → verifica che rimanga in cima
+### 2. Invio Sitemap
+1.  Nella dashboard della nuova proprietà `mattioli.OS`.
+2.  Nel menu a sinistra, clicca su **Sitemap**.
+3.  In "Aggiungi una nuova sitemap", scrivi: `sitemap.xml`
+4.  Clicca **Invia**.
+5.  Dovresti vedere lo stato "Riuscito" (potrebbe volerci qualche minuto o giorno per l'elaborazione completa).
 
-#### Step 6: Test Eliminazione Abitudine
-- [ ] Riordina abitudini in modo custom
-- [ ] Elimina un'abitudine nel **mezzo** della lista
-- [ ] Verifica che le rimanenti mantengano l'ordine relativo
-- [ ] Ricarica → verifica ordine ancora corretto
+### 3. Deploy Aggiornamenti
+Ho aggiornato `robots.txt`, `sitemap.xml` e i meta tag in `index.html`. Devi caricare queste modifiche.
 
-#### Step 7: Test Edit Mode Durante Drag
-- [ ] Apri edit mode di un'abitudine (click icona matita)
-- [ ] Verifica che durante edit NON puoi trascinare (grip disabilitato)
-- [ ] Salva edit
-- [ ] Verifica che ora puoi trascinare di nuovo
+```bash
+git add .
+git commit -m "feat: seo optimization, sitemap and robots.txt"
+git push
+```
 
-#### Step 9: Test con Molte Abitudini
-- [ ] Crea almeno 10-15 abitudini
-- [ ] Prova a trascinare dalla cima al fondo
-- [ ] Prova a trascinare dal fondo alla cima
-- [ ] Verifica smooth scroll durante drag
-- [ ] Verifica performance (no lag)
-
-#### Step 10: Browser Compatibility
-- [ ] Testa su Chrome
-- [ ] Testa su Firefox
-- [ ] Testa su Safari (se su Mac)
-- [ ] Verifica funzionamento identico
-
-### 5. README.md Links (Da Verificare)
-Controlla che i seguenti link nel README.md siano corretti:
-- [ ] `YOUR_YOUTUBE_VIDEO_LINK_HERE` → Inserisci link tutorial se disponibile
+Dopo il push, attendi che la Action di GitHub Pages finisca il deploy.
 
 ---
 
-## Website Structure & Routing Verification
-1. [ ] **Landing Page**: Visit `/` and verify the new landing page is visible.
-2. [ ] **No Links**: Verify there are no buttons pointing to the app on the landing page.
-3. [ ] **App Access**: Manually navigate to `/dashboard` (or `/#/dashboard`) to access the app.
-4. [ ] **Auth Redirect**: Log out, go to `/auth`, log in. Verify redirection to `/dashboard`.
-5. [ ] **Logo Link**: Inside the app, click the top-left logo. Verify it stays on `/dashboard`.
-6. [ ] **Mobile Nav**: On mobile view, click "Home". Verify it goes to `/dashboard`.
+## 📝 Storico Task Manuali
 
----
-
-## Landing Page Refinement Verification
-1. [ ] **Open Source Badge**: Verify the "Opne Source & Free Forever" badge is visible in the Hero section.
-2. [ ] **Description Text**: Verify the main description includes "Open Source e totalmente gratuita".
-3. [ ] **Footer**: Verify the footer says "Open Source Project".
-
----
-
-## FAQ Page Verification
-1. [ ] **Navigation**: Verify "FAQ" link in Top Nav of Landing Page works.
-2. [ ] **Footer**: Verify "FAQ & Support" link in Footer works.
-3. [ ] **Search**: Test the search bar in FAQ page (e.g., search for "AI").
-4. [ ] **Accordion**: Open/Close multiple questions to verify animation.
-5. [ ] **Categories**: Filter by "AI Coach" or "Daily Protocol" and verify list updates.
-6. [ ] **Back Link**: Verify "Torna alla Home" link works.
-
----
-
-## Tech Page Verification
-1. [ ] **Navigation**: Verify "Tech" link in Landing Page Top Nav.
-2. [ ] **Content**: Check that all 6 technology cards are visible.
-3. [ ] **Responsive**: Check the page on mobile view to ensure the 2-column grid stacks correctly.
-4. [ ] **Back Link**: Verify "Torna alla Home" works.
-
----
-
-## Philosophy Page Verification
-1. [ ] **Navigation**: Verify "Filosofia" link in Landing Page Top Nav links to `/philosophy`.
-2. [ ] **Content**: Check the "Origin Story" section. Does it explain the "Why"?
-3. [ ] **Pillars**: Verify all 3 pillars (Micro/Macro, Data, Ownership) are visible.
-4. [ ] **Back Link**: Verify "Torna alla Home" works.
-5. [ ] **Tech Link**: Verify the "Esplora la Tecnologia" button in the footer leads to `/tech`.
-
----
-
-## Features Page Verification
-1. [ ] **Navigation**: Verify "Funzionalità" link in Landing Page Top Nav links to `/features`.
-2. [ ] **Completeness**: Check all 4 categories (Daily, Long-Term, AI, Utils).
-3. [ ] **AI Details**: Verify AI Coach, Mood Matrix, and "Privacy First" are mentioned.
-4. [ ] **Responsiveness**: Check grid layout on mobile (stacked cards).
-5. [ ] **Back Link**: Verify "Torna alla Home" works.
-6. [ ] **CTA**: Verify "Accedi alla Dashboard" button works.
-
----
-
-## Get Started Page Verification
-1. [ ] **Navigation**: Verify "Guida Installazione" link in Landing Page Top Nav and Footer.
-2. [ ] **Content Clarity**: Ensure steps are easy to follow for a beginner.
-3. [ ] **Copy Buttons**: Test all copy buttons (Git, NPM, Run Dev).
-4. [ ] **Schema**: Verify the "schema.sql" preview is visible and scrollable.
-5. [ ] **External Links**: Check that links to VS Code, Node.js, and Supabase work.
-
----
-
-## Creator Page Verification
-1. [ ] **Navigation**: Verify "Il Founder" link in the Landing Page Footer.
-2. [ ] **Narrative**: Check if the "Tech vs Nature" story is effectively communicated.
-3. [ ] **External Links**: Test all 4 social buttons (GitHub, LinkedIn, Mountains, Personal).
-4. [ ] **Visuals**: Verify the background gradients (purple/emerald) render correctly.
-
----
-
-## Mobile Optimization Verification
-1. [ ] **Hamburger Menu**: Open any subpage (e.g., Features) on mobile. Verify the hamburger menu appears.
-2. [ ] **Navigation Flow**: Click "Features" -> "Creator" -> "Tech" via the mobile menu. Verify smooth transition.
-3. [ ] **Back to Home**: Verify the "ArrowLeft" icon works on mobile (text might be hidden).
-4. [ ] **No Overflow**: Scroll horizontally on all pages. There should be NO horizontal scrollbar (except for code blocks).
-
-## Deployment Guide Verification
-1. [ ] **Vercel Section**: Read the Vercel deployment steps. Are they accurate?
-2. [ ] **GitHub Pages Section**: Read the GitHub Pages steps. Is the `base` path warning clear?
-3. [ ] **Visuals**: Verify the background gradients (purple/emerald) render correctly.
-
----
-
-## Test Mobile Nav Transparency
-1. [ ] Aprire il sito da mobile o devtools mobile view
-2. [ ] Cliccare sull'icona menu hamburger
-3. [ ] **Verifica**:
-   - [ ] Lo sfondo del menu è "sfocato" (glass effect)
-   - [ ] Il contenuto sottostante è visibile ma fortemente sfocato
-   - [ ] Il testo è ben leggibile grazie allo sfondo scuro semitrasparente
-
----
-
-## GitHub Pages Deployment Verification (BrowserRouter)
-1. [ ] **Push to Main**: Esegui `git push` e attendi il completamento dell'action su GitHub.
-2. [ ] **Verify Root URL**: Visita `https://simo-hue.github.io/habit-tracker/` (o il tuo URL GitHub Pages).
-   - [ ] Deve caricare la **Landing Page**.
-   - [ ] L'URL **NON** deve contenere `/#/`.
-3. [ ] **Verify Dashboard Navigation**:
-   - [ ] Clicca su "Accedi alla Dashboard" o loggati.
-   - [ ] Verifica il redirect a `/habit-tracker/dashboard`.
-4. [ ] **Direct Link Test**:
-   - [ ] Prova ad aprire direttamente `https://simo-hue.github.io/habit-tracker/features`.
-   - [ ] Verifica che carichi la pagina corretta (grazie al 404 hack).
-5. [ ] **Refresh Test**:
-   - [ ] Vai su `/dashboard` o `/tech`.
-   - [ ] Ricarica la pagina.
-   - [ ] Verifica che rimanga sulla pagina corretta senza errori 404.
-
-
-- [ ] [Implementazione Concept Art](./DOCUMENTATION_CONCEPT_ART.md)
+- [ ] Verificare che la favicon si veda correttamente in produzione (ho aggiornato il path).
+- [ ] Controllare che il link Canonico in `index.html` sia corretto ispezionando la pagina live.
