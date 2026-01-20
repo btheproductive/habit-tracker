@@ -8,6 +8,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import LandingMobileNav from "@/components/LandingMobileNav";
+import PublicHeader from "@/components/PublicHeader";
 
 // FAQ Data
 const faqData = [
@@ -105,16 +106,8 @@ const FAQPage = () => {
     return (
         <div className="min-h-screen bg-black text-white selection:bg-purple-900 selection:text-white">
             {/* Nav */}
-            <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-md">
-                <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link to="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
-                        <ArrowLeft size={20} />
-                        <span className="hidden md:inline text-sm font-medium">Torna alla Home</span>
-                    </Link>
-                    <span className="font-semibold text-lg tracking-tight">Q&A Knowledge Base</span>
-                    <LandingMobileNav />
-                </div>
-            </nav>
+            {/* Nav */}
+            <PublicHeader />
 
             {/* Hero & Search */}
             <section className="pt-32 pb-12 px-6 bg-zinc-900/20">

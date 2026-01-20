@@ -12,6 +12,11 @@
   - Favicon path corretto per la subdirectory.
 - **GSC**: Aggiunte istruzioni manuali in `TO_SIMO_DO.md` per la configurazione della proprietà specifica.
 
+### [2026-01-20] Standardizzazione Public Header
+- **Componente Unico**: Creato `src/components/PublicHeader.tsx` per centralizzare la navigazione del sito pubblico.
+- **Design Uniforme**: Applicato lo stesso header fisso a tutte le sotto-pagine (Landing, FAQ, Tech, Philosophy, Features, Creator, GetStarted).
+- **Mobile Friendly**: Integrato `LandingMobileNav` nel nuovo componente condiviso.
+
 ### [2026-01-20] Fix Deploy GitHub Pages
 - Aggiornata configurazione `vite.config.ts` base path a `/mattioli.OS/`.
 - Corretti i path delle risorse statiche.

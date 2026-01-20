@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import LandingMobileNav from "@/components/LandingMobileNav";
+import PublicHeader from "@/components/PublicHeader";
 
 const PhilosophyPage = () => {
     const fadeInUp = {
@@ -26,16 +26,8 @@ const PhilosophyPage = () => {
         <div className="min-h-screen bg-black text-white selection:bg-amber-900 selection:text-white overflow-x-hidden">
 
             {/* Navigation */}
-            <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-md">
-                <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link to="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
-                        <ArrowLeft size={20} />
-                        <span className="hidden md:inline text-sm font-medium">Torna alla Home</span>
-                    </Link>
-                    <span className="font-semibold text-lg tracking-tight">Our Philosophy</span>
-                    <LandingMobileNav />
-                </div>
-            </nav>
+            {/* Navigation */}
+            <PublicHeader />
 
             {/* Hero Section */}
             <section className="pt-32 pb-20 px-6 relative overflow-hidden">

@@ -9,7 +9,7 @@ import {
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import LandingMobileNav from "@/components/LandingMobileNav";
+import PublicHeader from "@/components/PublicHeader";
 
 const GetStartedPage = () => {
     const [copiedStep, setCopiedStep] = useState<string | null>(null);
@@ -37,15 +37,8 @@ const GetStartedPage = () => {
     return (
         <div className="min-h-screen bg-black text-white selection:bg-green-900 selection:text-white overflow-x-hidden">
             {/* Navigation */}
-            <nav className="fixed top-0 w-full z-50 border-b border-white/10 bg-black/50 backdrop-blur-md">
-                <div className="container mx-auto px-6 h-16 flex items-center justify-between">
-                    <Link to="/" className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
-                        <ArrowLeft size={20} />
-                        <span className="hidden md:inline text-sm font-medium">Torna alla Home</span>
-                    </Link>
-                    <LandingMobileNav />
-                </div>
-            </nav>
+            {/* Navigation */}
+            <PublicHeader />
 
             {/* Hero Section */}
             <section className="pt-32 pb-12 px-6">
