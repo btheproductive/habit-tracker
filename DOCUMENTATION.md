@@ -6,6 +6,7 @@
 - **Problema**: Su iOS, l'app usciva dalla modalità standalone (full-screen) navigando fuori dalla home page.
 - **Soluzione**: Implementazione completa PWA Configuration.
 - **File Creato**: `public/manifest.json` configurato con `display: standalone` e `start_url` puntato alla dashboard.
+- **Icona**: Generata nuova icona professionale `public/pwa-icon.png` (Gradient Compass on Black).
 - **File Modificato**: `index.html` con aggiunta meta tags specifici per iOS (`apple-mobile-web-app-capable`).
 - **Scope**: Configurato `/mattioli.OS/` per coprire sia l'app che il sito.
 

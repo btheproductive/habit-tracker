@@ -11,13 +11,13 @@ npm run deploy
 
 ### 2. PWA Update (Critical Step)
 **IMPORTANT for iOS Users**:
-Because we changed the PWA configuration (`manifest.json`), you **MUST** reinstall the app for changes to take effect:
+Because we changed the PWA configuration (`manifest.json` and new Icon), you **MUST** reinstall the app for changes to take effect:
 
 1.  **Delete** the existing "Mattioli.OS" app from your Home Screen.
 2.  Open Safari and visit `https://simo-hue.github.io/mattioli.OS/`.
 3.  Tap "Share" -> "Add to Home Screen".
-4.  Launch the new icon.
-5.  **Verify**: The app should now launch directly into the Login/Dashboard screen and stay in full-screen (standalone) mode when navigating.
+4.  **Verify**: You should see the NEW professional icon (Dark Compass) instead of the old one.
+5.  Launch the new icon.
 
 ### 3. Verify in Google Search Console
 Test the URL: `https://simo-hue.github.io/mattioli.OS/features`
