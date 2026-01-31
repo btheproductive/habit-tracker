@@ -3,15 +3,15 @@
 ## 📅 Log Modifiche (Ultimi aggiornamenti)
 
 ### [2026-01-31] Enhanced Category Distribution PieChart (Macro Goals)
-- **Miglioramenti Estetici Premium**:
-  - Gradienti sulle fette del grafico con effetto sfumato
-  - Drop shadow per dare profondità
-  - Tooltip glassmorphism con dati formattati (obiettivi, percentuale quota)
-  - Legenda custom con percentuali e effetti hover
+- **Layout Ridisegnato**:
+  - Grafico Pie centrato in alto
+  - Legenda sotto su tutta la larghezza, griglia responsive (4 col desktop / 3 col tablet / 2 col mobile)
+- **Miglioramenti Estetici**:
+  - Tooltip glassmorphism con dati formattati
+  - Legenda custom con percentuali e hover effects
   - Label centrale che mostra il totale obiettivi
-  - Header migliorato con icona e descrizione
-  - Ambient glow effect sulla card
-  - Animazioni smooth in ingresso (1.2s ease-out)
+  - Header con icona e descrizione
+  - Animazioni smooth in ingresso
 - **File Modificato**: `src/components/goals/MacroGoalsStats.tsx`
 - **Testing**: Build verificata con successo.
 
