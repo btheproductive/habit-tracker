@@ -228,7 +228,7 @@ const Index = () => {
                 size="icon"
                 className="h-10 w-10 sm:h-9 sm:w-9 border-primary/20 bg-primary/5 hover:bg-primary/10"
                 title="Backup Completo"
-                onClick={() => navigate('/complete-backup')}
+                onClick={() => navigate('/sw/complete-backup')}
               >
                 <Database className="h-4 w-4" />
               </Button>
