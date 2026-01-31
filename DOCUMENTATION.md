@@ -2,6 +2,14 @@
 
 ## 📅 Log Modifiche (Ultimi aggiornamenti)
 
+### [2026-01-31] Fix Visualizzazione "AI Coach" nell'Header
+- **Problema**: Il link "AI Coach" rimaneva sempre visibile nell'header della navigazione anche quando lo switch AI veniva disattivato nel box del protocollo (dashboard).
+- **Causa**: Nel componente `GlobalNav.tsx`, la logica di filtraggio controllava il percorso `/ai-coach` invece del percorso corretto `/sw/ai-coach`, causando un mancato match e rendendo il filtro inefficace.
+- **Soluzione**: Corretto il percorso nella condizione di filtraggio da `/ai-coach` a `/sw/ai-coach` (linea 18 di `GlobalNav.tsx`).
+- **Beneficio**: Ora quando l'utente disattiva lo switch AI, il link "AI Coach" viene correttamente nascosto dalla barra di navigazione, garantendo un'esperienza utente coerente con le impostazioni selezionate.
+- **File Modificato**: `/Users/simo/Downloads/DEV/habit-tracker/src/components/GlobalNav.tsx`
+- **Testing**: Eseguita build di verifica con successo.
+
 ### [2026-01-29] Fix Logica Macro Goals (Obiettivi Futuri)
 - **Problema**: L'app segnava come "falliti" gli obiettivi futuri (es. settimana prossima) durante il controllo automatico di scadenza.
 - **Causa**: La funzione SQL `check_and_fail_expired_goals` utilizzava una logica di confronto date imprecisa che non gestiva correttamente la gerarchia Anno -> Mese -> Settimana, causando falsi positivi quando il numero della settimana differiva ma l'anno/mese erano futuri. Inoltre, il calcolo della "settimana corrente" nel database poteva differire dalla logica frontend (`date-fns`).

@@ -15,7 +15,7 @@ export function GlobalNav() {
   // Filter navigation items based on AI state
   const visibleNavItems = navItems.filter(item => {
     // Hide AI Coach if AI is disabled
-    if (item.to === '/ai-coach' && !isAIEnabled) {
+    if (item.to === '/sw/ai-coach' && !isAIEnabled) {
       return false;
     }
     return true;

@@ -19,7 +19,20 @@ If you have future goals that were incorrectly marked as 'failed':
     ```
     (Adjust year/logic as needed for your specific case).
 
-### 3. Deploy to GitHub Pages
+### 3. Testing dello Switch AI (IMPORTANTE)
+Dopo il deploy, verifica che il fix funzioni correttamente:
+
+1. Apri l'applicazione e vai alla dashboard (`/sw/dashboard`)
+2. Verifica che lo switch AI sia presente nel box "Protocollo" 
+3. **Test con AI ATTIVO**:
+   - Attiva lo switch AI
+   - Verifica che nella barra di navigazione appaia il link "AI Coach"
+4. **Test con AI DISATTIVATO**:
+   - Disattiva lo switch AI
+   - Verifica che il link "AI Coach" scompaia dalla barra di navigazione
+5. Ripeti il test più volte per verificare che il comportamento sia consistente
+
+### 4. Deploy to GitHub Pages
 After the automatic build process completes, you need to deploy the updated version to GitHub Pages:
 
 ```bash
